@@ -64,7 +64,7 @@ pub(crate) async fn get_cluster_resources(
                         };
 
                         if let Some(ls_app_ver) = last_applied_apiversion {
-                            if !ls_app_ver.eq(&ar.kind) {
+                            if !ls_app_ver.eq(&updated_api) {
                                 let t = TableDetails {
                                     kind: ar.kind.to_string(),
                                     namespace: ns,
