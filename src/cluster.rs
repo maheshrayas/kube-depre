@@ -10,7 +10,7 @@ use tokio::task::spawn;
 
 pub(crate) async fn get_cluster_resources(
     version: &str,
-) -> Result<Vec<tokio::task::JoinHandle<Result<Option<TableDetails>>>>> {
+) -> Result<Vec<tokio::task::JoinHandle<Result<Vec<TableDetails>>>>> {
     let client = Client::try_default().await?;
     let ns_filter = Arc::new(std::env::var("NAMESPACE").ok());
     let discovery = Discovery::new(client.clone()).run().await?;
@@ -20,19 +20,17 @@ pub(crate) async fn get_cluster_resources(
         .iter()
         .flat_map(|f| f.recommended_resources())
         .filter_map(|(ar, caps)| {
-            val.apis
-                .as_object()
-                .unwrap()
-                .get(&ar.kind)
-                .map(|updated_api_vesion| (ar, caps, updated_api_vesion.to_string()))
+            val["apis"][&ar.kind]
+                .as_str()
+                .map(|api_version| (ar, caps, api_version.to_string()))
         });
-
     Ok(m.into_iter()
         .map(|(ar, caps, updated_api)| {
             let ns_filter_clone = Arc::clone(&ns_filter);
             let arc_client = Arc::new(client.clone());
             let client_clone = Arc::clone(&arc_client);
             spawn(async move {
+                let mut temp_table: Vec<TableDetails> = vec![];
                 // println!("Thread id {:?}", thread::current().id());
                 if caps.supports_operation(verbs::LIST) {
                     let api: Api<DynamicObject> = if caps.scope == Scope::Namespaced {
@@ -62,7 +60,6 @@ pub(crate) async fn get_cluster_resources(
                         } else {
                             None
                         };
-
                         if let Some(ls_app_ver) = last_applied_apiversion {
                             if !ls_app_ver.eq(&updated_api) {
                                 let t = TableDetails {
@@ -72,12 +69,12 @@ pub(crate) async fn get_cluster_resources(
                                     supported_api_version: updated_api.to_string(),
                                     deprecated_api_version: ls_app_ver,
                                 };
-                                return Ok(Some(t));
+                                temp_table.push(t);
                             }
                         }
                     }
                 }
-                Ok(None)
+                Ok(temp_table)
             })
         })
         .collect())
