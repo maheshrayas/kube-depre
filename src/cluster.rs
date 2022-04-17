@@ -1,4 +1,4 @@
-use crate::utils::{Deprecated, JsonDetails, TableDetails};
+use crate::utils::{ClusterOP, Deprecated, JsonDetails, TableDetails};
 use anyhow::Result;
 use kube::{
     api::{Api, DynamicObject, ResourceExt},
@@ -10,9 +10,7 @@ use log::info;
 use std::sync::Arc;
 use tokio::task::spawn;
 
-pub(crate) async fn get_cluster_resources(
-    version: &str,
-) -> Result<Vec<tokio::task::JoinHandle<Result<Vec<TableDetails>>>>> {
+pub(crate) async fn get_cluster_resources(version: &str) -> Result<ClusterOP> {
     let client = Client::try_default().await?;
     //let current_config = kube::config::Config::infer().await?;
     let current_config = kube::config::Kubeconfig::read().unwrap();
