@@ -2,9 +2,11 @@ use crate::utils::{Deprecated, JsonDetails, TableDetails};
 use anyhow::Result;
 use kube::{
     api::{Api, DynamicObject, ResourceExt},
-    discovery::{verbs, ApiGroup, Discovery, Scope},
+    core::GroupVersionKind,
+    discovery::pinned_kind,
     Client,
 };
+use log::info;
 use std::sync::Arc;
 use tokio::task::spawn;
 
@@ -12,45 +14,51 @@ pub(crate) async fn get_cluster_resources(
     version: &str,
 ) -> Result<Vec<tokio::task::JoinHandle<Result<Vec<TableDetails>>>>> {
     let client = Client::try_default().await?;
-    let ns_filter = Arc::new(std::env::var("NAMESPACE").ok());
-    let discovery = Discovery::new(client.clone()).run().await?;
-    let val = Deprecated::get_apiversion(format!("v{}", version).as_str()).await?;
-    let group: Vec<&ApiGroup> = discovery.groups().collect();
-    let m = group
-        .iter()
-        .flat_map(|f| f.recommended_resources())
-        .filter_map(|(ar, caps)| {
-            val["apis"][&ar.kind]
-                .as_str()
-                .map(|api_version| (ar, caps, api_version.to_string()))
-        });
-    Ok(m.into_iter()
-        .map(|(ar, caps, updated_api)| {
-            let ns_filter_clone = Arc::clone(&ns_filter);
+    //let current_config = kube::config::Config::infer().await?;
+    let current_config = kube::config::Kubeconfig::read().unwrap();
+    info!(
+        "Connected to cluster {:?}",
+        current_config.current_context.unwrap()
+    );
+    info!("Target apiversions v{}", version);
+
+    let val = Deprecated::get_apiversion(format!("v{}", version).as_str())
+        .await?
+        .as_array()
+        .unwrap()
+        .to_owned();
+    Ok(val
+        .into_iter()
+        .map(|resource| {
             let arc_client = Arc::new(client.clone());
             let client_clone = Arc::clone(&arc_client);
             spawn(async move {
                 let mut temp_table: Vec<TableDetails> = vec![];
-                // println!("Thread id {:?}", thread::current().id());
-                if caps.supports_operation(verbs::LIST) {
-                    let api: Api<DynamicObject> = if caps.scope == Scope::Namespaced {
-                        if let Some(ns) = &*ns_filter_clone {
-                            Api::namespaced_with((*client_clone).clone(), ns, &ar)
-                        } else {
-                            Api::all_with((*client_clone).clone(), &ar)
-                        }
+                let kind = resource["kind"].as_str().unwrap().to_string();
+                let group = resource["group"].as_str().unwrap().to_string();
+                let version = resource["version"].as_str().unwrap().to_string();
+                let removed = resource["removed"].as_str().unwrap().to_string();
+                let gvk = GroupVersionKind::gvk(&group, &version, &kind);
+                let (ar, _) = pinned_kind(&(*client_clone).clone(), &gvk).await?;
+                let api: Api<DynamicObject> = Api::all_with((*client_clone).clone(), &ar);
+                let list = if let Ok(list) = api.list(&Default::default()).await {
+                    list
+                } else {
+                    return Ok(temp_table);
+                };
+
+                for item in list.items {
+                    let name = item.name();
+                    let ns = item.to_owned().metadata.namespace.unwrap_or_default();
+                    if removed.eq("true") {
+                        temp_table.push(TableDetails {
+                            kind: ar.kind.to_string(),
+                            namespace: ns,
+                            name,
+                            supported_api_version: "REMOVED".to_string(),
+                            deprecated_api_version: "REMOVED".to_string(),
+                        });
                     } else {
-                        Api::all_with((*client_clone).clone(), &ar)
-                    };
-                    let list = api.list(&Default::default()).await?;
-                    for item in list.items {
-                        let name = item.name();
-                        let ns = item
-                            .to_owned()
-                            .metadata
-                            .namespace
-                            .map(|s| s + "/")
-                            .unwrap_or_default();
                         let annotations = item.annotations();
                         let last_applied_apiversion = if let Some(last_applied) =
                             annotations.get("kubectl.kubernetes.io/last-applied-configuration")
@@ -60,13 +68,15 @@ pub(crate) async fn get_cluster_resources(
                         } else {
                             None
                         };
+
                         if let Some(ls_app_ver) = last_applied_apiversion {
-                            if !ls_app_ver.eq(&updated_api) {
+                            let supported_version = format!("{}/{}", &group, &version);
+                            if !ls_app_ver.eq(&supported_version) {
                                 let t = TableDetails {
                                     kind: ar.kind.to_string(),
                                     namespace: ns,
                                     name,
-                                    supported_api_version: updated_api.to_string(),
+                                    supported_api_version: supported_version,
                                     deprecated_api_version: ls_app_ver,
                                 };
                                 temp_table.push(t);
@@ -74,6 +84,7 @@ pub(crate) async fn get_cluster_resources(
                         }
                     }
                 }
+
                 Ok(temp_table)
             })
         })

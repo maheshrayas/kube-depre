@@ -3,7 +3,7 @@ use comfy_table::Table;
 mod cluster;
 mod utils;
 use crate::cluster::get_cluster_resources;
-use crate::utils::TableDetails;
+use crate::utils::{init_logger, TableDetails};
 use clap::Parser;
 
 #[derive(Parser)]
@@ -34,7 +34,7 @@ async fn main() -> anyhow::Result<()> {
         _ => std::env::set_var("RUST_LOG", "info,kube=info"),
     }
 
-    env_logger::init();
+    init_logger();
 
     let mut table = Table::new();
     table.set_header(vec![
@@ -44,13 +44,12 @@ async fn main() -> anyhow::Result<()> {
         "DeprecatedApiVersion",
         "SupportedApiVersion",
     ]);
-
-    let join_handle: Vec<tokio::task::JoinHandle<Result<Option<TableDetails>>>> =
+    let join_handle: Vec<tokio::task::JoinHandle<Result<Vec<TableDetails>>>> =
         get_cluster_resources(version).await?;
 
     for task in join_handle {
         let result = task.await?.unwrap();
-        if let Some(r) = result {
+        for r in result {
             table.add_row(vec![
                 r.kind,
                 r.namespace,
