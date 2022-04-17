@@ -1,9 +1,8 @@
-use anyhow::Result;
-use comfy_table::Table;
+use utils::{DeprecatedResult, Output};
 mod cluster;
 mod utils;
 use crate::cluster::get_cluster_resources;
-use crate::utils::{init_logger, TableDetails};
+use crate::utils::{init_logger, ClusterOP};
 use clap::Parser;
 
 #[derive(Parser)]
@@ -11,6 +10,9 @@ use clap::Parser;
 struct Sunset {
     #[clap(long = "target-version", short = 't')]
     target_version: Option<String>,
+    /// Output format table, junit, csv
+    #[clap(long = "output", short = 'o', arg_enum,default_value_t = Output::Table)]
+    output: Output,
     #[clap(long, short)]
     kubeconfig: Option<String>,
     #[clap(short, long, parse(from_occurrences))]
@@ -36,29 +38,19 @@ async fn main() -> anyhow::Result<()> {
 
     init_logger();
 
-    let mut table = Table::new();
-    table.set_header(vec![
-        "Kind",
-        "Namespace",
-        "Name",
-        "DeprecatedApiVersion",
-        "SupportedApiVersion",
-    ]);
-    let join_handle: Vec<tokio::task::JoinHandle<Result<Vec<TableDetails>>>> =
-        get_cluster_resources(version).await?;
+    let join_handle: ClusterOP = get_cluster_resources(version).await?;
+    let d = DeprecatedResult::new(join_handle);
 
-    for task in join_handle {
-        let result = task.await?.unwrap();
-        for r in result {
-            table.add_row(vec![
-                r.kind,
-                r.namespace,
-                r.name,
-                r.deprecated_api_version,
-                r.supported_api_version,
-            ]);
+    match cli.output {
+        Output::Csv => {
+            d.generate_csv().await?;
+        }
+        Output::Junit => {
+            println!("Junit");
+        }
+        Output::Table => {
+            d.generate_table().await?;
         }
     }
-    println!("{table}");
     Ok(())
 }
