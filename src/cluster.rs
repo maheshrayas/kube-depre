@@ -1,4 +1,4 @@
-use crate::utils::{ClusterOP, Deprecated, JsonDetails, TableDetails};
+use crate::utils::{ClusterOP, JsonDetails, TableDetails};
 use anyhow::Result;
 use kube::{
     api::{Api, DynamicObject, ResourceExt},
@@ -7,24 +7,18 @@ use kube::{
     Client,
 };
 use log::info;
+use serde_json::Value;
 use std::sync::Arc;
 use tokio::task::spawn;
 
-pub(crate) async fn get_cluster_resources(version: &str) -> Result<ClusterOP> {
+pub(crate) async fn get_cluster_resources(version: &str, val: Vec<Value>) -> Result<ClusterOP> {
     let client = Client::try_default().await?;
-    //let current_config = kube::config::Config::infer().await?;
     let current_config = kube::config::Kubeconfig::read().unwrap();
     info!(
         "Connected to cluster {:?}",
         current_config.current_context.unwrap()
     );
     info!("Target apiversions v{}", version);
-
-    let val = Deprecated::get_apiversion(format!("v{}", version).as_str())
-        .await?
-        .as_array()
-        .unwrap()
-        .to_owned();
     Ok(val
         .into_iter()
         .map(|resource| {
@@ -82,7 +76,6 @@ pub(crate) async fn get_cluster_resources(version: &str) -> Result<ClusterOP> {
                         }
                     }
                 }
-
                 Ok(temp_table)
             })
         })

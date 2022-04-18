@@ -1,9 +1,13 @@
-use utils::{DeprecatedResult, Output};
+use comfy_table::Table;
+use file::search_files;
+use utils::{generate_csv_header, Deprecated, Output, Scrape};
 mod cluster;
+mod file;
 mod utils;
 use crate::cluster::get_cluster_resources;
-use crate::utils::{init_logger, ClusterOP};
+use crate::utils::{generate_table_header, init_logger, ClusterOP, VecTableDetails};
 use clap::Parser;
+use log::info;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -15,8 +19,21 @@ struct Sunset {
     output: Output,
     #[clap(long, short)]
     kubeconfig: Option<String>,
+    /// Scrape the cluster for deprecated apis,
+    #[clap(long, short)]
+    file: Option<String>,
     #[clap(short, long, parse(from_occurrences))]
     debug: usize,
+}
+
+impl Sunset {
+    // if there is a mention of -d in the args, it will be scraping the directory else default will be cluster
+    fn check_scrape_type(&self) -> Scrape {
+        match &self.file {
+            Some(d) => Scrape::Dir(d.to_string()),
+            None => Scrape::Cluster,
+        }
+    }
 }
 
 #[tokio::main]
@@ -38,18 +55,66 @@ async fn main() -> anyhow::Result<()> {
 
     init_logger();
 
-    let join_handle: ClusterOP = get_cluster_resources(version).await?;
-    let d = DeprecatedResult::new(join_handle);
+    let val = Deprecated::get_apiversion(format!("v{}", version).as_str())
+        .await?
+        .as_array()
+        .unwrap()
+        .to_owned();
 
-    match cli.output {
-        Output::Csv => {
-            d.generate_csv().await?;
+    match cli.check_scrape_type() {
+        Scrape::Cluster => {
+            let join_handle: ClusterOP = get_cluster_resources(version, val).await?;
+            match cli.output {
+                Output::Csv => {
+                    let mut wtr = csv::Writer::from_path("./deprecated-list.csv")?;
+                    generate_csv_header(&mut wtr, "Filename")?;
+                    for task in join_handle {
+                        let x: VecTableDetails = utils::VecTableDetails(task.await?.unwrap());
+                        x.generate_csv(&mut wtr)?;
+                    }
+                    wtr.flush()?;
+                    info!(
+                        "deprecated-list.csv written at location {}",
+                        std::env::current_dir()?.as_os_str().to_str().unwrap()
+                    );
+                }
+                Output::Junit => {
+                    println!("Junit");
+                }
+                Output::Table => {
+                    let mut t = Table::new();
+                    let t = generate_table_header(&mut t, "Namespace");
+                    for task in join_handle {
+                        let x: VecTableDetails = utils::VecTableDetails(task.await?.unwrap());
+                        x.generate_table(t)?;
+                    }
+                    println!("{t}");
+                }
+            }
         }
-        Output::Junit => {
-            println!("Junit");
-        }
-        Output::Table => {
-            d.generate_table().await?;
+        Scrape::Dir(loc) => {
+            let x: VecTableDetails = utils::VecTableDetails(search_files(val, loc));
+            match cli.output {
+                Output::Csv => {
+                    let mut wtr = csv::Writer::from_path("./deprecated-list.csv")?;
+                    generate_csv_header(&mut wtr, "Filename")?;
+                    x.generate_csv(&mut wtr)?;
+                    wtr.flush()?;
+                    info!(
+                        "deprecated-list.csv written at location {}",
+                        std::env::current_dir()?.as_os_str().to_str().unwrap()
+                    );
+                }
+                Output::Junit => {
+                    println!("Junit");
+                }
+                Output::Table => {
+                    let mut t = Table::new();
+                    let t = generate_table_header(&mut t, "filename");
+                    x.generate_table(t)?;
+                    println!("{t}");
+                }
+            }
         }
     }
     Ok(())

@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 serde = {version = "1.0", features  = ["derive"] }
 serde_json = "1.0"
+yaml-rust = "0.4.5"
 kube = {version="0.71.0", features = ["runtime","derive"]}
 k8s-openapi = {version = "0.14.0",features=["v1_22"]}
 tokio = { version = "1.17.0", features = ["full"] }
@@ -19,3 +20,5 @@ clap = { version = "3.1.8", features = ["derive"] }
 comfy-table = "5.0.1"
 openssl = { version = "0.10", features = ["vendored"] }
 csv="1.1.6"
+jwalk = "0.6.0"
+rayon ="1.5.1"
