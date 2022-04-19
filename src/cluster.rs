@@ -11,7 +11,10 @@ use serde_json::Value;
 use std::sync::Arc;
 use tokio::task::spawn;
 
-pub(crate) async fn get_cluster_resources(version: &str, val: Vec<Value>) -> Result<ClusterOP> {
+pub(crate) async fn get_cluster_resources(
+    version: &str,
+    val: Vec<Value>,
+) -> Result<Vec<TableDetails>> {
     let client = Client::try_default().await?;
     let current_config = kube::config::Kubeconfig::read().unwrap();
     info!(
@@ -19,7 +22,7 @@ pub(crate) async fn get_cluster_resources(version: &str, val: Vec<Value>) -> Res
         current_config.current_context.unwrap()
     );
     info!("Target apiversions v{}", version);
-    Ok(val
+    let join_handle: ClusterOP = val
         .into_iter()
         .map(|resource| {
             let arc_client = Arc::new(client.clone());
@@ -79,5 +82,10 @@ pub(crate) async fn get_cluster_resources(version: &str, val: Vec<Value>) -> Res
                 Ok(temp_table)
             })
         })
-        .collect())
+        .collect();
+    let mut v: Vec<TableDetails> = vec![];
+    for task in join_handle {
+        v.append(&mut task.await?.unwrap());
+    }
+    Ok(v)
 }

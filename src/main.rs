@@ -63,15 +63,12 @@ async fn main() -> anyhow::Result<()> {
 
     match cli.check_scrape_type() {
         Scrape::Cluster => {
-            let join_handle: ClusterOP = get_cluster_resources(version, val).await?;
+            let x = utils::VecTableDetails(get_cluster_resources(version, val).await?);
             match cli.output {
                 Output::Csv => {
                     let mut wtr = csv::Writer::from_path("./deprecated-list.csv")?;
                     generate_csv_header(&mut wtr, "Filename")?;
-                    for task in join_handle {
-                        let x: VecTableDetails = utils::VecTableDetails(task.await?.unwrap());
-                        x.generate_csv(&mut wtr)?;
-                    }
+                    x.generate_csv(&mut wtr)?;
                     wtr.flush()?;
                     info!(
                         "deprecated-list.csv written at location {}",
@@ -84,10 +81,7 @@ async fn main() -> anyhow::Result<()> {
                 Output::Table => {
                     let mut t = Table::new();
                     let t = generate_table_header(&mut t, "Namespace");
-                    for task in join_handle {
-                        let x: VecTableDetails = utils::VecTableDetails(task.await?.unwrap());
-                        x.generate_table(t)?;
-                    }
+                    x.generate_table(t)?;
                     println!("{t}");
                 }
             }
