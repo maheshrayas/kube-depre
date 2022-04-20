@@ -1,5 +1,6 @@
 use crate::utils::{ClusterOP, Finder, JsonDetails, TableDetails};
 use anyhow::Result;
+use async_trait::async_trait;
 use kube::{
     api::{Api, DynamicObject, ResourceExt},
     core::GroupVersionKind,
@@ -11,7 +12,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::sync::Arc;
 use tokio::task::spawn;
-use async_trait::async_trait;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub(crate) struct Cluster {
@@ -20,7 +20,7 @@ pub(crate) struct Cluster {
 }
 
 impl<'a> Cluster {
-    pub(crate)  async fn new(version: String) -> anyhow::Result<Cluster> {
+    pub(crate) async fn new(version: String) -> anyhow::Result<Cluster> {
         Ok(Cluster {
             version: version.to_owned(),
             deprecated_api_result: Self::get_deprecated_api(&version).await?,
@@ -30,7 +30,7 @@ impl<'a> Cluster {
 
 #[async_trait]
 impl Finder for Cluster {
- async fn find_deprecated_api(&self) -> Result<Vec<TableDetails>> {
+    async fn find_deprecated_api(&self) -> Result<Vec<TableDetails>> {
         let client = Client::try_default().await?;
         let current_config = kube::config::Kubeconfig::read().unwrap();
         info!(
@@ -44,7 +44,6 @@ impl Finder for Cluster {
             .map(|resource| {
                 let arc_client = Arc::new(client.clone());
                 let client_clone = Arc::clone(&arc_client);
-                let resource =  Arc::clone(&Arc::new(resource));
                 spawn(async move {
                     let mut temp_table: Vec<TableDetails> = vec![];
                     let kind = resource["kind"].as_str().unwrap().to_string();

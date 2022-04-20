@@ -4,11 +4,11 @@ use comfy_table::{ContentArrangement, Table};
 use csv::Writer;
 use env_logger::{Builder, Env};
 
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{fs::File, io::Write};
 use tokio::task::JoinHandle;
-use async_trait::async_trait;
 
 pub(crate) type ClusterOP = Vec<JoinHandle<Result<Vec<TableDetails>>>>;
 
@@ -113,12 +113,10 @@ pub(crate) enum Scrape {
     Dir(String),
 }
 
-
 #[async_trait]
 pub(crate) trait Finder {
     async fn find_deprecated_api(&self) -> Result<Vec<TableDetails>>;
-    async fn get_deprecated_api(version:&String) -> anyhow::Result<Vec<Value>> {
-        
+    async fn get_deprecated_api(version: &String) -> anyhow::Result<Vec<Value>> {
         let url = format!(
             "https://raw.githubusercontent.com/maheshrayas/k8s_deprecated_api/main/v{}/data.json",
             version
