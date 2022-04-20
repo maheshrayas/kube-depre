@@ -1,4 +1,4 @@
-use crate::utils::TableDetails;
+use crate::utils::{TableDetails,Finder};
 use jwalk::{Parallelism, WalkDir};
 use rayon::iter::ParallelBridge;
 use rayon::prelude::ParallelIterator;
@@ -7,10 +7,32 @@ use std::fs::File;
 use std::io::Read;
 use std::sync::mpsc::{channel, Sender};
 use yaml_rust::YamlLoader;
+use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 
-pub(crate) fn search_files(t: Vec<Value>, loc: String) -> Vec<TableDetails> {
+#[derive(Serialize, Deserialize, Default, Debug)]
+pub(crate) struct FileSystem {
+    version: String,
+    file_dir: String,
+    deprecated_apis: Vec<Value>,
+
+}
+
+impl<'a> FileSystem {
+    pub(crate)  async fn new(file_dir: String, version: String) -> anyhow::Result<FileSystem> {
+        Ok(FileSystem {
+            file_dir,
+            version:version.to_owned(),
+            deprecated_apis: Self::get_deprecated_api(&version).await?,
+        })
+    }
+}
+
+#[async_trait]
+impl<'a> Finder for FileSystem {
+    async fn find_deprecated_api(&self) -> anyhow::Result<Vec<TableDetails>> {
     let (sender, receiver) = channel();
-    WalkDir::new(loc)
+    WalkDir::new(&self.file_dir)
         .parallelism(Parallelism::RayonNewPool(0))
         .into_iter()
         .par_bridge()
@@ -30,7 +52,7 @@ pub(crate) fn search_files(t: Vec<Value>, loc: String) -> Vec<TableDetails> {
                             // TODO: use combinators
                             for doc in docs {
                                 if let Some(mut api_version) = doc["apiVersion"].as_str() {
-                                    for z in t.iter() {
+                                    for z in self.deprecated_apis.iter() {
                                         if z["kind"]
                                             .as_str()
                                             .unwrap()
@@ -102,5 +124,6 @@ pub(crate) fn search_files(t: Vec<Value>, loc: String) -> Vec<TableDetails> {
         };
         temp_table.push(t);
     }
-    temp_table
+    Ok(temp_table)
+}
 }
