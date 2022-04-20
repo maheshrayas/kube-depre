@@ -1,6 +1,6 @@
 use comfy_table::Table;
-use file::{FileSystem};
-use utils::{generate_csv_header, Output, Scrape, Finder};
+use file::FileSystem;
+use utils::{generate_csv_header, Finder, Output, Scrape};
 mod cluster;
 mod file;
 mod utils;
@@ -40,7 +40,7 @@ impl Sunset {
 async fn main() -> anyhow::Result<()> {
     let cli = Sunset::parse();
     // You can check the value provided by positional arguments, or option arguments
-    let version: String = if let Some(version) = &cli.target_version{
+    let version: String = if let Some(version) = &cli.target_version {
         version.to_string()
     } else {
         "1.16".to_string()
@@ -55,12 +55,9 @@ async fn main() -> anyhow::Result<()> {
 
     init_logger();
 
-
-
     match cli.check_scrape_type() {
         Scrape::Cluster => {
-            let c =  Cluster::new(version).await?;
-            println!("hello");
+            let c = Cluster::new(version).await?;
             let x = utils::VecTableDetails(c.find_deprecated_api().await?);
             match cli.output {
                 Output::Csv => {
@@ -85,7 +82,7 @@ async fn main() -> anyhow::Result<()> {
             }
         }
         Scrape::Dir(loc) => {
-            let c =  FileSystem::new(loc, version).await?;
+            let c = FileSystem::new(loc, version).await?;
             let x = utils::VecTableDetails(c.find_deprecated_api().await?);
             match cli.output {
                 Output::Csv => {
