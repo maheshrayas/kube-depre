@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{fs::File, io::Write};
 use tokio::task::JoinHandle;
+use async_trait::async_trait;
 
 pub(crate) type ClusterOP = Vec<JoinHandle<Result<Vec<TableDetails>>>>;
 
@@ -82,17 +83,6 @@ pub(crate) struct Deprecated {
     pub(crate) apis: serde_json::Value,
 }
 
-impl Deprecated {
-    pub(crate) async fn get_apiversion(version: &str) -> Result<Value> {
-        let url = format!(
-            "https://raw.githubusercontent.com/maheshrayas/k8s_deprecated_api/main/{}/data.json",
-            version
-        );
-        let x: Value = reqwest::get(url).await?.json().await?;
-        Ok(x)
-    }
-}
-
 pub(crate) fn init_logger() {
     let env = Env::default()
         .filter("RUST_LOG")
@@ -121,4 +111,19 @@ pub(crate) enum Output {
 pub(crate) enum Scrape {
     Cluster,
     Dir(String),
+}
+
+
+#[async_trait]
+pub(crate) trait Finder {
+    async fn find_deprecated_api(&self) -> Result<Vec<TableDetails>>;
+    async fn get_deprecated_api(version:&String) -> anyhow::Result<Vec<Value>> {
+        
+        let url = format!(
+            "https://raw.githubusercontent.com/maheshrayas/k8s_deprecated_api/main/v{}/data.json",
+            version
+        );
+        let v: Value = reqwest::get(url).await?.json().await?;
+        Ok(v.as_array().unwrap().to_owned())
+    }
 }

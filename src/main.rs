@@ -1,11 +1,11 @@
 use comfy_table::Table;
-use file::search_files;
-use utils::{generate_csv_header, Deprecated, Output, Scrape};
+use file::{FileSystem};
+use utils::{generate_csv_header, Output, Scrape, Finder};
 mod cluster;
 mod file;
 mod utils;
-use crate::cluster::get_cluster_resources;
-use crate::utils::{generate_table_header, init_logger, ClusterOP, VecTableDetails};
+use crate::cluster::Cluster;
+use crate::utils::{generate_table_header, init_logger};
 use clap::Parser;
 use log::info;
 
@@ -40,10 +40,10 @@ impl Sunset {
 async fn main() -> anyhow::Result<()> {
     let cli = Sunset::parse();
     // You can check the value provided by positional arguments, or option arguments
-    let version = if let Some(version) = cli.target_version.as_deref() {
-        version
+    let version: String = if let Some(version) = &cli.target_version{
+        version.to_string()
     } else {
-        "1.16"
+        "1.16".to_string()
     };
 
     match cli.debug {
@@ -55,15 +55,13 @@ async fn main() -> anyhow::Result<()> {
 
     init_logger();
 
-    let val = Deprecated::get_apiversion(format!("v{}", version).as_str())
-        .await?
-        .as_array()
-        .unwrap()
-        .to_owned();
+
 
     match cli.check_scrape_type() {
         Scrape::Cluster => {
-            let x = utils::VecTableDetails(get_cluster_resources(version, val).await?);
+            let c =  Cluster::new(version).await?;
+            println!("hello");
+            let x = utils::VecTableDetails(c.find_deprecated_api().await?);
             match cli.output {
                 Output::Csv => {
                     let mut wtr = csv::Writer::from_path("./deprecated-list.csv")?;
@@ -87,7 +85,8 @@ async fn main() -> anyhow::Result<()> {
             }
         }
         Scrape::Dir(loc) => {
-            let x: VecTableDetails = utils::VecTableDetails(search_files(val, loc));
+            let c =  FileSystem::new(loc, version).await?;
+            let x = utils::VecTableDetails(c.find_deprecated_api().await?);
             match cli.output {
                 Output::Csv => {
                     let mut wtr = csv::Writer::from_path("./deprecated-list.csv")?;
@@ -110,6 +109,6 @@ async fn main() -> anyhow::Result<()> {
                 }
             }
         }
-    }
+    };
     Ok(())
 }
