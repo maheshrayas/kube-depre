@@ -51,7 +51,12 @@ impl Finder for Cluster {
                     let version = resource["version"].as_str().unwrap().to_string();
                     let removed = resource["removed"].as_str().unwrap().to_string();
                     let gvk = GroupVersionKind::gvk(&group, &version, &kind);
-                    let (ar, _) = pinned_kind(&(*client_clone).clone(), &gvk).await?;
+                    let ar = if let Ok((ar, _)) = pinned_kind(&(*client_clone).clone(), &gvk).await
+                    {
+                        ar
+                    } else {
+                        return Ok(temp_table);
+                    };
                     let api: Api<DynamicObject> = Api::all_with((*client_clone).clone(), &ar);
                     let list = if let Ok(list) = api.list(&Default::default()).await {
                         list
@@ -80,18 +85,16 @@ impl Finder for Cluster {
                             } else {
                                 None
                             };
-
                             if let Some(ls_app_ver) = last_applied_apiversion {
                                 let supported_version = format!("{}/{}", &group, &version);
                                 if !ls_app_ver.eq(&supported_version) {
-                                    let t = TableDetails {
+                                    temp_table.push(TableDetails {
                                         kind: ar.kind.to_string(),
                                         namespace: ns,
                                         name,
                                         supported_api_version: supported_version,
                                         deprecated_api_version: ls_app_ver,
-                                    };
-                                    temp_table.push(t);
+                                    });
                                 }
                             }
                         }

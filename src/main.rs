@@ -1,13 +1,11 @@
-use comfy_table::Table;
 use file::FileSystem;
-use utils::{generate_csv_header, Finder, Output, Scrape};
+use utils::{Finder, Output, Scrape};
 mod cluster;
 mod file;
 mod utils;
 use crate::cluster::Cluster;
-use crate::utils::{generate_table_header, init_logger};
+use crate::utils::init_logger;
 use clap::Parser;
-use log::info;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -30,8 +28,8 @@ impl Sunset {
     // if there is a mention of -d in the args, it will be scraping the directory else default will be cluster
     fn check_scrape_type(&self) -> Scrape {
         match &self.file {
-            Some(d) => Scrape::Dir(d.to_string()),
-            None => Scrape::Cluster,
+            Some(d) => Scrape::Dir(d.to_string(), "Filename"),
+            None => Scrape::Cluster("Namespace"),
         }
     }
 }
@@ -56,53 +54,33 @@ async fn main() -> anyhow::Result<()> {
     init_logger();
 
     match cli.check_scrape_type() {
-        Scrape::Cluster => {
+        Scrape::Cluster(col_replace) => {
             let c = Cluster::new(version).await?;
             let x = utils::VecTableDetails(c.find_deprecated_api().await?);
             match cli.output {
                 Output::Csv => {
-                    let mut wtr = csv::Writer::from_path("./deprecated-list.csv")?;
-                    generate_csv_header(&mut wtr, "Filename")?;
-                    x.generate_csv(&mut wtr)?;
-                    wtr.flush()?;
-                    info!(
-                        "deprecated-list.csv written at location {}",
-                        std::env::current_dir()?.as_os_str().to_str().unwrap()
-                    );
+                    x.generate_csv(col_replace)?;
                 }
                 Output::Junit => {
                     println!("Junit");
                 }
                 Output::Table => {
-                    let mut t = Table::new();
-                    let t = generate_table_header(&mut t, "Namespace");
-                    x.generate_table(t)?;
-                    println!("{t}");
+                    x.generate_table(col_replace)?;
                 }
             }
         }
-        Scrape::Dir(loc) => {
+        Scrape::Dir(loc, col_replace) => {
             let c = FileSystem::new(loc, version).await?;
             let x = utils::VecTableDetails(c.find_deprecated_api().await?);
             match cli.output {
                 Output::Csv => {
-                    let mut wtr = csv::Writer::from_path("./deprecated-list.csv")?;
-                    generate_csv_header(&mut wtr, "Filename")?;
-                    x.generate_csv(&mut wtr)?;
-                    wtr.flush()?;
-                    info!(
-                        "deprecated-list.csv written at location {}",
-                        std::env::current_dir()?.as_os_str().to_str().unwrap()
-                    );
+                    x.generate_csv(col_replace)?;
                 }
                 Output::Junit => {
                     println!("Junit");
                 }
                 Output::Table => {
-                    let mut t = Table::new();
-                    let t = generate_table_header(&mut t, "filename");
-                    x.generate_table(t)?;
-                    println!("{t}");
+                    x.generate_table(col_replace)?;
                 }
             }
         }
