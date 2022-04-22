@@ -3,6 +3,7 @@ use clap::ArgEnum;
 use comfy_table::{ContentArrangement, Table};
 use csv::Writer;
 use env_logger::{Builder, Env};
+use log::info;
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
@@ -30,7 +31,9 @@ pub(crate) struct TableDetails {
 }
 
 impl VecTableDetails {
-    pub(crate) fn generate_table(self, t: &mut Table) -> Result<()> {
+    pub(crate) fn generate_table(self, column_replace: &str) -> Result<()> {
+        let mut t = Table::new();
+        let t = generate_table_header(&mut t, column_replace);
         for r in self.0 {
             t.add_row(vec![
                 r.kind,
@@ -40,9 +43,12 @@ impl VecTableDetails {
                 r.supported_api_version,
             ]);
         }
+        println!("{t}");
         Ok(())
     }
-    pub(crate) fn generate_csv(self, wtr: &mut Writer<File>) -> Result<()> {
+    pub(crate) fn generate_csv(self, column_replace: &str) -> Result<()> {
+        let mut wtr = csv::Writer::from_path("./deprecated-list.csv")?;
+        generate_csv_header(&mut wtr, column_replace)?;
         for r in self.0 {
             wtr.write_record([
                 r.kind,
@@ -52,6 +58,11 @@ impl VecTableDetails {
                 r.supported_api_version,
             ])?;
         }
+        wtr.flush()?;
+        info!(
+            "deprecated-list.csv written at location {}",
+            std::env::current_dir()?.as_os_str().to_str().unwrap()
+        );
         Ok(())
     }
 }
@@ -108,9 +119,9 @@ pub(crate) enum Output {
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) enum Scrape {
-    Cluster,
-    Dir(String),
+pub(crate) enum Scrape<'a> {
+    Cluster(&'a str),
+    Dir(String, &'a str),
 }
 
 #[async_trait]
