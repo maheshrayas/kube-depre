@@ -11,6 +11,9 @@ use std::path::Path;
 use std::sync::mpsc::{channel, Sender};
 use yaml_rust::{Yaml, YamlLoader};
 
+
+type SenderChannel = Sender<(String, String, String, String, String)>;
+
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub(crate) struct FileSystem {
     version: String,
@@ -30,7 +33,7 @@ impl<'a> FileSystem {
         &self,
         doc: Yaml,
         path: &Path,
-        sed: &mut Sender<(String, String, String, String, String)>,
+        sed: &mut SenderChannel,
     ) -> anyhow::Result<()> {
         if let Some(mut api_version) = doc["apiVersion"].as_str() {
             for z in self.deprecated_apis.iter() {
@@ -89,8 +92,6 @@ impl<'a> Finder for FileSystem {
                                 file.read_to_string(&mut contents)
                                     .expect("Unable to read file");
                                 let docs = YamlLoader::load_from_str(&contents)?;
-                                // TODO: use combinators
-
                                 for doc in docs {
                                     Self::found_deprecated_api(self, doc, &path, sed)?;
                                 }
