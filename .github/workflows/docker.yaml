@@ -2,7 +2,7 @@ name: Build and push Docker images
 on:
   push:
     tags:
-      - v[0-9]+
+      - v[0-9]
 
 env:
   DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -32,7 +32,7 @@ jobs:
         id: get_version
         run: echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
 
-        name: Build and push
+      - name: Build and push
         run: |
           PACKAGE_VERSION=${{ steps.get_version.outputs.VERSION }}
           KUBE_DEPRE_IMAGE=$DOCKER_REPO:$PACKAGE_VERSION
