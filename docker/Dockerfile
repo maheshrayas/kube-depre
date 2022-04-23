@@ -17,6 +17,7 @@ RUN adduser \
     --uid "${UID}" \
     "${USER}"
 
+WORKDIR /kube
 
 COPY src src
 COPY Cargo.toml Cargo.toml
@@ -31,8 +32,8 @@ WORKDIR /kdepre
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
-COPY --from=builder /target/x86_64-unknown-linux-musl/release/pr_deletr ./
+COPY --from=builder /kube/target/x86_64-unknown-linux-musl/release/kube-depre ./
 
 USER kdepre:kdepre
 
-ENTRYPOINT [ "/kdepre/kdepre" ]
+ENTRYPOINT [ "/kdepre/kube-depre" ]
