@@ -10,6 +10,7 @@ use std::io::Read;
 use std::path::Path;
 use std::sync::mpsc::{channel, Sender};
 use yaml_rust::{Yaml, YamlLoader};
+use log::info;
 
 type SenderChannel = Sender<(String, String, String, String, String)>;
 
@@ -28,12 +29,13 @@ impl<'a> FileSystem {
             deprecated_apis: Self::get_deprecated_api(&version).await?,
         })
     }
-    fn found_deprecated_api(
+    fn find_deprecated_api(
         &self,
         doc: Yaml,
         path: &Path,
         sed: &mut SenderChannel,
     ) -> anyhow::Result<()> {
+        
         if let Some(mut api_version) = doc["apiVersion"].as_str() {
             for z in self.deprecated_apis.iter() {
                 if z["kind"]
@@ -73,6 +75,7 @@ impl<'a> FileSystem {
 #[async_trait]
 impl<'a> Finder for FileSystem {
     async fn find_deprecated_api(&self) -> anyhow::Result<Vec<TableDetails>> {
+        info!("Target apiversions v{}", &self.version);
         let (sender, receiver) = channel();
         let _: anyhow::Result<()> = WalkDir::new(&self.file_dir)
             .parallelism(Parallelism::RayonNewPool(0))
@@ -92,7 +95,7 @@ impl<'a> Finder for FileSystem {
                                     .expect("Unable to read file");
                                 let docs = YamlLoader::load_from_str(&contents)?;
                                 for doc in docs {
-                                    Self::found_deprecated_api(self, doc, &path, sed)?;
+                                    Self::find_deprecated_api(self, doc, &path, sed)?;
                                 }
                             }
                         }

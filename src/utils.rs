@@ -111,6 +111,7 @@ pub(crate) fn init_logger() {
         .init();
 }
 
+
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum)]
 pub(crate) enum Output {
     Table,

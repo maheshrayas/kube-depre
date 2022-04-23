@@ -1,4 +1,5 @@
 use file::FileSystem;
+use log::info;
 use utils::{Finder, Output, Scrape};
 mod cluster;
 mod file;
@@ -38,10 +39,10 @@ impl Sunset {
 async fn main() -> anyhow::Result<()> {
     let cli = Sunset::parse();
     // You can check the value provided by positional arguments, or option arguments
-    let version: String = if let Some(version) = &cli.target_version {
-        version.to_string()
+    let versions: Vec<&str>= if let Some(version) = &cli.target_version {
+        [version.as_str()].to_vec()
     } else {
-        "1.16".to_string()
+        ["1.16", "1.22", "1.25", "1.26"].to_vec()
     };
 
     match cli.debug {
@@ -53,37 +54,50 @@ async fn main() -> anyhow::Result<()> {
 
     init_logger();
 
-    match cli.check_scrape_type() {
-        Scrape::Cluster(col_replace) => {
-            let c = Cluster::new(version).await?;
-            let x = utils::VecTableDetails(c.find_deprecated_api().await?);
-            match cli.output {
-                Output::Csv => {
-                    x.generate_csv(col_replace)?;
+    //TODO: Try to run in parallel
+    for version in versions {
+        match cli.check_scrape_type() {
+            Scrape::Cluster(col_replace) => {
+                let c = Cluster::new(version.to_string()).await?;
+                let x = utils::VecTableDetails(c.find_deprecated_api().await?);
+                if x.0.len()>0{           
+                     match cli.output {
+                    Output::Csv => {
+                        x.generate_csv(col_replace)?;
+                    }
+                    Output::Junit => {
+                        println!("Junit");
+                    }
+                    Output::Table => {
+                        x.generate_table(col_replace)?;
+                    }
                 }
-                Output::Junit => {
-                    println!("Junit");
-                }
-                Output::Table => {
-                    x.generate_table(col_replace)?;
-                }
+                
+            }else {
+                info!("All good")
+
             }
-        }
-        Scrape::Dir(loc, col_replace) => {
-            let c = FileSystem::new(loc, version).await?;
-            let x = utils::VecTableDetails(c.find_deprecated_api().await?);
-            match cli.output {
-                Output::Csv => {
-                    x.generate_csv(col_replace)?;
-                }
-                Output::Junit => {
-                    println!("Junit");
-                }
-                Output::Table => {
-                    x.generate_table(col_replace)?;
-                }
+                
             }
-        }
-    };
+            Scrape::Dir(loc, col_replace) => {
+                let c = FileSystem::new(loc, version.to_string()).await?;
+                let x = utils::VecTableDetails(c.find_deprecated_api().await?);
+                if x.0.len()>0{
+                match cli.output {
+                    Output::Csv => {
+                        x.generate_csv(col_replace)?;
+                    }
+                    Output::Junit => {
+                        println!("Junit");
+                    }
+                    Output::Table => {
+                        x.generate_table(col_replace)?;
+                    }
+                }
+                info!("All good")
+            }
+            }
+        };
+    }
     Ok(())
 }
