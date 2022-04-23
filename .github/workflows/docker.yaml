@@ -2,7 +2,7 @@ name: Build and push Docker images
 on:
   push:
     tags:
-      - v[0-9]
+      - v[0-9]+
 
 env:
   DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
