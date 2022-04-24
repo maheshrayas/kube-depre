@@ -9,21 +9,18 @@ use kube::{
 };
 use log::info;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use std::sync::Arc;
+use std::{sync::Arc};
 use tokio::task::spawn;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub(crate) struct Cluster {
-    version: String,
-    deprecated_api_result: Vec<Value>,
+    deprecated_api_result: Vec<crate::utils::Api>,
 }
 
 impl<'a> Cluster {
-    pub(crate) async fn new(version: String) -> anyhow::Result<Cluster> {
+    pub(crate) async fn new(version: Vec<String>) -> anyhow::Result<Cluster> {
         Ok(Cluster {
-            version: version.to_owned(),
-            deprecated_api_result: Self::get_deprecated_api(&version).await?,
+            deprecated_api_result: Self::get_deprecated_api(version).await?,
         })
     }
 }
@@ -37,19 +34,20 @@ impl Finder for Cluster {
             "Connected to cluster {:?}",
             current_config.current_context.unwrap()
         );
-        info!("Target apiversions v{}", &self.version);
         let m = self.deprecated_api_result.to_owned();
         let join_handle: ClusterOP = m
             .into_iter()
             .map(|resource| {
                 let arc_client = Arc::new(client.clone());
                 let client_clone = Arc::clone(&arc_client);
+                //let k8_version= Arc::clone(&Arc::new(resource["k8_version"].as_str().unwrap()));
                 spawn(async move {
                     let mut temp_table: Vec<TableDetails> = vec![];
-                    let kind = resource["kind"].as_str().unwrap().to_string();
-                    let group = resource["group"].as_str().unwrap().to_string();
-                    let version = resource["version"].as_str().unwrap().to_string();
-                    let removed = resource["removed"].as_str().unwrap().to_string();
+                    let kind = resource.kind.to_string();
+                    let group = resource.group.to_string();
+                    let version = resource.version.to_string();
+                    let removed = resource.removed.to_string();
+                    let k8_version = resource.k8_version.to_owned().unwrap().to_string();
                     let gvk = GroupVersionKind::gvk(&group, &version, &kind);
                     let ar = if let Ok((ar, _)) = pinned_kind(&(*client_clone).clone(), &gvk).await
                     {
@@ -74,6 +72,7 @@ impl Finder for Cluster {
                                 name,
                                 supported_api_version: "REMOVED".to_string(),
                                 deprecated_api_version: "REMOVED".to_string(),
+                                k8_version: k8_version.to_string(),
                             });
                         } else {
                             let annotations = item.annotations();
@@ -94,6 +93,7 @@ impl Finder for Cluster {
                                         name,
                                         supported_api_version: supported_version,
                                         deprecated_api_version: ls_app_ver,
+                                        k8_version: k8_version.to_string(),
                                     });
                                 }
                             }

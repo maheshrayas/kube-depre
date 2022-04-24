@@ -1,32 +1,29 @@
-use crate::utils::{Finder, TableDetails};
+use crate::utils::{Finder, TableDetails,Api};
 use async_trait::async_trait;
 use jwalk::{Parallelism, WalkDir};
 use rayon::iter::ParallelBridge;
 use rayon::prelude::ParallelIterator;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 use std::sync::mpsc::{channel, Sender};
 use yaml_rust::{Yaml, YamlLoader};
-use log::info;
 
-type SenderChannel = Sender<(String, String, String, String, String)>;
+
+type SenderChannel = Sender<(String, String, String, String, String,String)>;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub(crate) struct FileSystem {
-    version: String,
     file_dir: String,
-    deprecated_apis: Vec<Value>,
+    deprecated_apis: Vec<Api>,
 }
 
 impl<'a> FileSystem {
-    pub(crate) async fn new(file_dir: String, version: String) -> anyhow::Result<FileSystem> {
+    pub(crate) async fn new(file_dir: String, version: Vec<String>) -> anyhow::Result<FileSystem> {
         Ok(FileSystem {
             file_dir,
-            version: version.to_owned(),
-            deprecated_apis: Self::get_deprecated_api(&version).await?,
+            deprecated_apis: Self::get_deprecated_api(version).await?,
         })
     }
     fn find_deprecated_api(
@@ -35,23 +32,20 @@ impl<'a> FileSystem {
         path: &Path,
         sed: &mut SenderChannel,
     ) -> anyhow::Result<()> {
-        
         if let Some(mut api_version) = doc["apiVersion"].as_str() {
             for z in self.deprecated_apis.iter() {
-                if z["kind"]
-                    .as_str()
-                    .unwrap()
+                if z.kind
                     .eq(doc["kind"].as_str().unwrap())
                 {
                     let mut supported_api_version = format!(
                         "{}/{}",
-                        z["group"].as_str().unwrap(),
-                        z["version"].as_str().unwrap()
+                        z.group,
+                        z.version
                     );
 
                     let p = path.file_name().unwrap().to_str().unwrap().to_string();
                     let mut send = false;
-                    if z["removed"].as_str().unwrap().eq("true") {
+                    if z.removed.eq("true") {
                         supported_api_version = "REMOVED".to_string();
                         api_version = "REMOVED";
                         send = true
@@ -63,6 +57,7 @@ impl<'a> FileSystem {
                             api_version.to_string(),
                             doc["metadata"]["name"].as_str().unwrap().to_string(),
                             p,
+                            z.k8_version.as_ref().unwrap().to_string(),
                         ))?
                     }
                 }
@@ -75,7 +70,6 @@ impl<'a> FileSystem {
 #[async_trait]
 impl<'a> Finder for FileSystem {
     async fn find_deprecated_api(&self) -> anyhow::Result<Vec<TableDetails>> {
-        info!("Target apiversions v{}", &self.version);
         let (sender, receiver) = channel();
         let _: anyhow::Result<()> = WalkDir::new(&self.file_dir)
             .parallelism(Parallelism::RayonNewPool(0))
@@ -83,7 +77,7 @@ impl<'a> Finder for FileSystem {
             .par_bridge()
             .try_for_each_with(
                 sender,
-                |sed: &mut Sender<(String, String, String, String, String)>, op| {
+                |sed: &mut SenderChannel, op| {
                     let dir_entry = op.ok().unwrap();
                     if dir_entry.file_type().is_file() {
                         let path = dir_entry.path();
@@ -105,13 +99,15 @@ impl<'a> Finder for FileSystem {
             );
         let res: Vec<_> = receiver.iter().collect();
         let mut temp_table: Vec<TableDetails> = vec![];
-        for (kind, supported_api_version, deprecated_api_version, name, path) in res {
+        for (kind, supported_api_version, deprecated_api_version, name, path, k8_version) in res {
             temp_table.push(TableDetails {
                 kind,
                 namespace: path,
                 name,
                 supported_api_version,
                 deprecated_api_version,
+                k8_version,
+
             });
         }
         Ok(temp_table)
