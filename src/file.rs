@@ -1,6 +1,7 @@
 use kube_depre::utils::{DepreApi, Finder, TableDetails};
 use async_trait::async_trait;
 use jwalk::{Parallelism, WalkDir};
+use kube_depre::utils::{DepreApi, Finder, TableDetails};
 use rayon::iter::ParallelBridge;
 use rayon::prelude::ParallelIterator;
 use serde::{Deserialize, Serialize};

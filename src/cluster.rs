@@ -7,6 +7,7 @@ use kube::{
     discovery::pinned_kind,
     Client,
 };
+use kube_depre::utils::{ClusterOP, DepreApi, Finder, JsonDetails, TableDetails};
 use log::info;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
