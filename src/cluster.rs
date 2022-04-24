@@ -1,4 +1,3 @@
-use kube_depre::utils::{DepreApi, Finder, TableDetails, ClusterOP, JsonDetails};
 use anyhow::Result;
 use async_trait::async_trait;
 use kube::{
@@ -7,6 +6,7 @@ use kube::{
     discovery::pinned_kind,
     Client,
 };
+use kube_depre::utils::{ClusterOP, DepreApi, Finder, JsonDetails, TableDetails};
 use log::info;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
