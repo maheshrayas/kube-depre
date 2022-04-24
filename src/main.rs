@@ -1,5 +1,7 @@
+use std::process::exit;
+
 use file::FileSystem;
-use log::info;
+use log::error;
 use utils::{Finder, Output, Scrape};
 mod cluster;
 mod file;
@@ -8,6 +10,7 @@ use crate::cluster::Cluster;
 use crate::utils::init_logger;
 use clap::Parser;
 
+const K8_VERSIONS: [&str; 4] = ["1.16", "1.22", "1.25", "1.26"];
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 struct Sunset {
@@ -37,12 +40,17 @@ impl Sunset {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    init_logger();
     let cli = Sunset::parse();
-    // You can check the value provided by positional arguments, or option arguments
     let versions: Vec<String> = if let Some(version) = &cli.target_version {
-        [version.to_string()].to_vec()
+        if K8_VERSIONS.contains(&version.as_str()) {
+            [version.to_string()].to_vec()
+        } else {
+            error!("Version {} does not have any deprecated apis", version);
+            exit(0);
+        }
     } else {
-        ["1.16".to_string(), "1.22".to_string(), "1.25".to_string(), "1.26".to_string()].to_vec()
+        K8_VERSIONS.iter().map(|v| v.to_string()).collect()
     };
 
     match cli.debug {
@@ -51,47 +59,42 @@ async fn main() -> anyhow::Result<()> {
         }
         _ => std::env::set_var("RUST_LOG", "info,kube=info"),
     }
-
-    init_logger();
-
-    //TODO: Try to run in parallel
-
-        match cli.check_scrape_type() {
-            Scrape::Cluster(col_replace) => {
-                let c = Cluster::new(versions).await?;
-                let x = utils::VecTableDetails(c.find_deprecated_api().await?);
-                if !x.0.is_empty(){
-                    match cli.output {
-                        Output::Csv => {
-                            x.generate_csv(col_replace)?;
-                        }
-                        Output::Junit => {
-                            println!("Junit");
-                        }
-                        Output::Table => {
-                            x.generate_table(col_replace)?;
-                        }
+    match cli.check_scrape_type() {
+        Scrape::Cluster(col_replace) => {
+            let c = Cluster::new(versions).await?;
+            let x = utils::VecTableDetails(c.find_deprecated_api().await?);
+            if !x.0.is_empty() {
+                match cli.output {
+                    Output::Csv => {
+                        x.generate_csv(col_replace)?;
+                    }
+                    Output::Junit => {
+                        println!("Junit");
+                    }
+                    Output::Table => {
+                        x.generate_table(col_replace)?;
                     }
                 }
             }
-            Scrape::Dir(loc, col_replace) => {
-                let c = FileSystem::new(loc, versions).await?;
-                let x = utils::VecTableDetails(c.find_deprecated_api().await?);
-                if !x.0.is_empty(){
-                    match cli.output {
-                        Output::Csv => {
-                            x.generate_csv(col_replace)?;
-                        }
-                        Output::Junit => {
-                            println!("Junit");
-                        }
-                        Output::Table => {
-                            x.generate_table(col_replace)?;
-                        }
+        }
+        Scrape::Dir(loc, col_replace) => {
+            let c = FileSystem::new(loc, versions).await?;
+            let x = utils::VecTableDetails(c.find_deprecated_api().await?);
+            if !x.0.is_empty() {
+                match cli.output {
+                    Output::Csv => {
+                        x.generate_csv(col_replace)?;
+                    }
+                    Output::Junit => {
+                        println!("Junit");
+                    }
+                    Output::Table => {
+                        x.generate_table(col_replace)?;
                     }
                 }
             }
-        };
-    
+        }
+    };
+
     Ok(())
 }

@@ -9,7 +9,7 @@ use kube::{
 };
 use log::info;
 use serde::{Deserialize, Serialize};
-use std::{sync::Arc};
+use std::sync::Arc;
 use tokio::task::spawn;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
@@ -40,7 +40,6 @@ impl Finder for Cluster {
             .map(|resource| {
                 let arc_client = Arc::new(client.clone());
                 let client_clone = Arc::clone(&arc_client);
-                //let k8_version= Arc::clone(&Arc::new(resource["k8_version"].as_str().unwrap()));
                 spawn(async move {
                     let mut temp_table: Vec<TableDetails> = vec![];
                     let kind = resource.kind.to_string();
