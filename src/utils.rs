@@ -3,11 +3,11 @@ use clap::ArgEnum;
 use comfy_table::{ContentArrangement, Table};
 use csv::Writer;
 use env_logger::{Builder, Env};
-use log::info;
+use log::{debug, info};
 
 use async_trait::async_trait;
+
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::{fs::File, io::Write};
 use tokio::task::JoinHandle;
 
@@ -28,6 +28,7 @@ pub(crate) struct TableDetails {
     pub(crate) name: String,
     pub(crate) deprecated_api_version: String,
     pub(crate) supported_api_version: String,
+    pub(crate) k8_version: String,
 }
 
 impl VecTableDetails {
@@ -41,6 +42,7 @@ impl VecTableDetails {
                 r.name,
                 r.deprecated_api_version,
                 r.supported_api_version,
+                r.k8_version,
             ]);
         }
         println!("{t}");
@@ -56,6 +58,7 @@ impl VecTableDetails {
                 r.name,
                 r.deprecated_api_version,
                 r.supported_api_version,
+                r.k8_version,
             ])?;
         }
         wtr.flush()?;
@@ -74,6 +77,7 @@ pub(crate) fn generate_table_header<'a>(t: &'a mut Table, column_replace: &str) 
         "Name",
         "DeprecatedApiVersion",
         "SupportedApiVersion",
+        "K8sVersion",
     ])
     .set_content_arrangement(ContentArrangement::Dynamic)
 }
@@ -85,6 +89,7 @@ pub(crate) fn generate_csv_header(wtr: &mut Writer<File>, column_replace: &str) 
         "Name",
         "DeprecatedApiVersion",
         "SupportedApiVersion",
+        "K8sVersion",
     ])?;
     Ok(())
 }
@@ -95,6 +100,9 @@ pub(crate) struct Deprecated {
 }
 
 pub(crate) fn init_logger() {
+    if std::env::var("RUST_LOG").is_err() {
+        std::env::set_var("RUST_LOG", "info");
+    }
     let env = Env::default()
         .filter("RUST_LOG")
         .write_style("MY_LOG_STYLE");
@@ -124,15 +132,37 @@ pub(crate) enum Scrape<'a> {
     Dir(String, &'a str),
 }
 
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
+pub(crate) struct Api {
+    pub(crate) kind: String,
+    pub(crate) group: String,
+    pub(crate) version: String,
+    pub(crate) removed: String,
+    pub(crate) k8_version: Option<String>,
+}
+
 #[async_trait]
 pub(crate) trait Finder {
     async fn find_deprecated_api(&self) -> Result<Vec<TableDetails>>;
-    async fn get_deprecated_api(version: &String) -> anyhow::Result<Vec<Value>> {
-        let url = format!(
+    async fn get_deprecated_api(versions: Vec<String>) -> anyhow::Result<Vec<Api>> {
+        //let mut apis: Vec<Value> = vec![];
+        let mut output: Vec<Api> = vec![];
+        for version in versions {
+            info!(
+                "Getting list of deperecated apis in kubernetes version {}",
+                version
+            );
+            let url = format!(
             "https://raw.githubusercontent.com/maheshrayas/k8s_deprecated_api/main/v{}/data.json",
             version
         );
-        let v: Value = reqwest::get(url).await?.json().await?;
-        Ok(v.as_array().unwrap().to_owned())
+            debug!("deprecated list url {}", url);
+            let v: Vec<Api> = reqwest::get(url).await?.json().await?;
+            for mut k in v {
+                k.k8_version = Some(version.to_owned());
+                output.push(k)
+            }
+        }
+        Ok(output)
     }
 }
