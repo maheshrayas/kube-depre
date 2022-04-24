@@ -1,4 +1,4 @@
-use crate::utils::{ClusterOP, Finder, JsonDetails, TableDetails};
+use kube_depre::utils::{DepreApi, Finder, TableDetails, ClusterOP, JsonDetails};
 use anyhow::Result;
 use async_trait::async_trait;
 use kube::{
@@ -14,7 +14,7 @@ use tokio::task::spawn;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub(crate) struct Cluster {
-    deprecated_api_result: Vec<crate::utils::Api>,
+    deprecated_api_result: Vec<DepreApi>,
 }
 
 impl<'a> Cluster {

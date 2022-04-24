@@ -1,4 +1,4 @@
-use crate::utils::{Api, Finder, TableDetails};
+use kube_depre::utils::{DepreApi, Finder, TableDetails};
 use async_trait::async_trait;
 use jwalk::{Parallelism, WalkDir};
 use rayon::iter::ParallelBridge;
@@ -15,7 +15,7 @@ type SenderChannel = Sender<(String, String, String, String, String, String)>;
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub(crate) struct FileSystem {
     file_dir: String,
-    deprecated_apis: Vec<Api>,
+    deprecated_apis: Vec<DepreApi>,
 }
 
 impl<'a> FileSystem {

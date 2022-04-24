@@ -11,28 +11,28 @@ use serde::{Deserialize, Serialize};
 use std::{fs::File, io::Write};
 use tokio::task::JoinHandle;
 
-pub(crate) type ClusterOP = Vec<JoinHandle<Result<Vec<TableDetails>>>>;
+pub type ClusterOP = Vec<JoinHandle<Result<Vec<TableDetails>>>>;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
-pub(crate) struct JsonDetails {
+pub struct JsonDetails {
     #[serde(rename = "apiVersion")]
-    pub(crate) api_version: String,
+    pub api_version: String,
 }
 
-pub(crate) struct VecTableDetails(pub(crate) Vec<TableDetails>);
+pub struct VecTableDetails(pub Vec<TableDetails>);
 
 #[derive(Default)]
-pub(crate) struct TableDetails {
-    pub(crate) kind: String,
-    pub(crate) namespace: String,
-    pub(crate) name: String,
-    pub(crate) deprecated_api_version: String,
-    pub(crate) supported_api_version: String,
-    pub(crate) k8_version: String,
+pub struct TableDetails {
+    pub kind: String,
+    pub namespace: String,
+    pub name: String,
+    pub deprecated_api_version: String,
+    pub supported_api_version: String,
+    pub k8_version: String,
 }
 
 impl VecTableDetails {
-    pub(crate) fn generate_table(self, column_replace: &str) -> Result<()> {
+    pub fn generate_table(self, column_replace: &str) -> Result<()> {
         let mut t = Table::new();
         let t = generate_table_header(&mut t, column_replace);
         for r in self.0 {
@@ -48,7 +48,7 @@ impl VecTableDetails {
         println!("{t}");
         Ok(())
     }
-    pub(crate) fn generate_csv(self, column_replace: &str) -> Result<()> {
+    pub fn generate_csv(self, column_replace: &str) -> Result<()> {
         let mut wtr = csv::Writer::from_path("./deprecated-list.csv")?;
         generate_csv_header(&mut wtr, column_replace)?;
         for r in self.0 {
@@ -70,7 +70,7 @@ impl VecTableDetails {
     }
 }
 
-pub(crate) fn generate_table_header<'a>(t: &'a mut Table, column_replace: &str) -> &'a mut Table {
+pub fn generate_table_header<'a>(t: &'a mut Table, column_replace: &str) -> &'a mut Table {
     t.set_header(vec![
         "Kind",
         column_replace,
@@ -82,7 +82,7 @@ pub(crate) fn generate_table_header<'a>(t: &'a mut Table, column_replace: &str) 
     .set_content_arrangement(ContentArrangement::Dynamic)
 }
 
-pub(crate) fn generate_csv_header(wtr: &mut Writer<File>, column_replace: &str) -> Result<()> {
+pub fn generate_csv_header(wtr: &mut Writer<File>, column_replace: &str) -> Result<()> {
     wtr.write_record([
         "Kind",
         column_replace,
@@ -95,11 +95,11 @@ pub(crate) fn generate_csv_header(wtr: &mut Writer<File>, column_replace: &str) 
 }
 
 #[derive(Serialize, Deserialize, Default, Debug)]
-pub(crate) struct Deprecated {
-    pub(crate) apis: serde_json::Value,
+pub struct Deprecated {
+    pub apis: serde_json::Value,
 }
 
-pub(crate) fn init_logger() {
+pub fn init_logger() {
     if std::env::var("RUST_LOG").is_err() {
         std::env::set_var("RUST_LOG", "info");
     }
@@ -120,33 +120,33 @@ pub(crate) fn init_logger() {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum)]
-pub(crate) enum Output {
+pub enum Output {
     Table,
     Junit,
     Csv,
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) enum Scrape<'a> {
+pub enum Scrape<'a> {
     Cluster(&'a str),
     Dir(String, &'a str),
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
-pub(crate) struct Api {
-    pub(crate) kind: String,
-    pub(crate) group: String,
-    pub(crate) version: String,
-    pub(crate) removed: String,
-    pub(crate) k8_version: Option<String>,
+pub struct DepreApi {
+    pub kind: String,
+    pub group: String,
+    pub version: String,
+    pub removed: String,
+    pub k8_version: Option<String>,
 }
 
 #[async_trait]
-pub(crate) trait Finder {
+pub trait Finder {
     async fn find_deprecated_api(&self) -> Result<Vec<TableDetails>>;
-    async fn get_deprecated_api(versions: Vec<String>) -> anyhow::Result<Vec<Api>> {
+    async fn get_deprecated_api(versions: Vec<String>) -> anyhow::Result<Vec<DepreApi>> {
         //let mut apis: Vec<Value> = vec![];
-        let mut output: Vec<Api> = vec![];
+        let mut output: Vec<DepreApi> = vec![];
         for version in versions {
             info!(
                 "Getting list of deperecated apis in kubernetes version {}",
@@ -157,7 +157,7 @@ pub(crate) trait Finder {
             version
         );
             debug!("deprecated list url {}", url);
-            let v: Vec<Api> = reqwest::get(url).await?.json().await?;
+            let v: Vec<DepreApi> = reqwest::get(url).await?.json().await?;
             for mut k in v {
                 k.k8_version = Some(version.to_owned());
                 output.push(k)

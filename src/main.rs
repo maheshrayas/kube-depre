@@ -2,12 +2,10 @@ use std::process::exit;
 
 use file::FileSystem;
 use log::error;
-use utils::{Finder, Output, Scrape};
+use kube_depre::utils::{Finder, Output, Scrape,init_logger, VecTableDetails};
 mod cluster;
 mod file;
-mod utils;
 use crate::cluster::Cluster;
-use crate::utils::init_logger;
 use clap::Parser;
 
 const K8_VERSIONS: [&str; 4] = ["1.16", "1.22", "1.25", "1.26"];
@@ -62,7 +60,7 @@ async fn main() -> anyhow::Result<()> {
     match cli.check_scrape_type() {
         Scrape::Cluster(col_replace) => {
             let c = Cluster::new(versions).await?;
-            let x = utils::VecTableDetails(c.find_deprecated_api().await?);
+            let x = VecTableDetails(c.find_deprecated_api().await?);
             if !x.0.is_empty() {
                 match cli.output {
                     Output::Csv => {
@@ -79,7 +77,7 @@ async fn main() -> anyhow::Result<()> {
         }
         Scrape::Dir(loc, col_replace) => {
             let c = FileSystem::new(loc, versions).await?;
-            let x = utils::VecTableDetails(c.find_deprecated_api().await?);
+            let x = VecTableDetails(c.find_deprecated_api().await?);
             if !x.0.is_empty() {
                 match cli.output {
                     Output::Csv => {
