@@ -1,4 +1,3 @@
-use kube_depre::utils::{DepreApi, Finder, TableDetails, ClusterOP, JsonDetails};
 use anyhow::Result;
 use async_trait::async_trait;
 use kube::{
