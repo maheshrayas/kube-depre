@@ -1,0 +1,40 @@
+name: Find Deprecated
+
+on: [push]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Check kubedepre
+        if: always()
+        id: kubedepre
+        run: |
+          wget -O kube-depre.tar.gz  --progress=dot:mega https://github.com/maheshrayas/kube-depre/releases/download/v0.1.1/kube-depre-x86_64-unknown-linux-gnu.tar.gz && tar -xf kube-depre.tar.gz -C /usr/local/bin/ && chmod +x /usr/local/bin/kube-depre \
+          kube-depre -f ${pwd}/tests/data -o csv
+          result=$(cat deprecated-list.csv)
+          echo ::set-output name=result::$result
+
+      - uses: actions/github-script@v4.1
+        if: (github.event_name == 'pull_request') && always()
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            <details><summary>Deprecated Report</summary>
+            \`\`\`
+            ${{ steps.deprecated.outputs.result }}
+            \`\`\`
+            </details>
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`.\`, Workflow: \`${{ github.workflow }}\`*`;
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
