@@ -145,10 +145,9 @@ pub struct DepreApi {
 pub trait Finder {
     async fn find_deprecated_api(&self) -> Result<Vec<TableDetails>>;
     async fn get_deprecated_api(versions: Vec<String>) -> anyhow::Result<Vec<DepreApi>> {
-        //let mut apis: Vec<Value> = vec![];
         let mut output: Vec<DepreApi> = vec![];
         for version in versions {
-            info!(
+            info!(  
                 "Getting list of deperecated apis in kubernetes version {}",
                 version
             );
