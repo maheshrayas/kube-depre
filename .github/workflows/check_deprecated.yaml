@@ -1,6 +1,6 @@
 name: Find Deprecated
 
-on: [push]
+on: [pull_request]
 
 env:
   CARGO_TERM_COLOR: always
@@ -10,31 +10,39 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
+      # Delete the previous comments
+      - name: pr-deleter
+        uses: maheshrayas/action-pr-comment-delete@v1
+        with:
+          github_token: '${{ secrets.GITHUB_TOKEN }}'
+          org: maheshrayas
+          repo: kube-depre
+          user: 'github-actions[bot]'
+          issue: '${{github.event.number}}'
       - uses: actions/checkout@v2
-
       - name: Check kubedepre
-        if: always()
         id: kubedepre
         run: |
-          wget -O kube-depre.tar.gz  --progress=dot:mega https://github.com/maheshrayas/kube-depre/releases/download/v0.1.1/kube-depre-x86_64-unknown-linux-gnu.tar.gz && tar -xf kube-depre.tar.gz -C /usr/local/bin/ && chmod +x /usr/local/bin/kube-depre \
-          kube-depre -f ${pwd}/tests/data -o csv
-          result=$(cat deprecated-list.csv)
-          echo ::set-output name=result::$result
-
-      - uses: actions/github-script@v4.1
-        if: (github.event_name == 'pull_request') && always()
+          wget -O kube-depre.tar.gz  --progress=dot:mega https://github.com/maheshrayas/kube-depre/releases/download/v0.1.8/kube-depre-x86_64-unknown-linux-musl.tar.gz && tar -xvzf kube-depre.tar.gz && chmod +x kube-depre
+          ./kube-depre -f $(pwd)/tests/data -o csv
+      - name: Read CSV
+        if : hashFiles('deprecated-list.csv') != ''
+        id: csv
+        uses: juliangruber/read-file-action@v1
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            <details><summary>Deprecated Report</summary>
-            \`\`\`
-            ${{ steps.deprecated.outputs.result }}
-            \`\`\`
-            </details>
-            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`.\`, Workflow: \`${{ github.workflow }}\`*`;
-            github.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output
-            })
+          path: ./deprecated-list.csv
+      - name: Convert to Markdown Table
+        uses: petems/csv-to-md-table-action@master
+        id: csv-table-output
+        with:
+          csvinput: ${{ steps.csv.outputs.content }}
+      - name: Add comment on Pull-request
+        uses: mshick/add-pr-comment@v1
+        if : hashFiles('deprecated-list.csv') != ''
+        with:
+          message: |
+            List of api's getting deprecated:
+            ${{steps.csv-table-output.outputs.markdown-table}}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
+          allow-repeats: true
