@@ -1,11 +1,9 @@
-use file::FileSystem;
-use kube_depre::utils::{init_logger, Finder, Output, Scrape, VecTableDetails};
+use clap::Parser;
+use kube_depre::Cluster;
+use kube_depre::FileSystem;
+use kube_depre::{init_logger, Finder, Output, Scrape, VecTableDetails};
 use log::error;
 use std::process::exit;
-mod cluster;
-mod file;
-use crate::cluster::Cluster;
-use clap::Parser;
 
 const K8_VERSIONS: [&str; 4] = ["1.16", "1.22", "1.25", "1.26"];
 #[derive(Parser)]

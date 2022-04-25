@@ -1,3 +1,4 @@
+use crate::utils::{ClusterOP, DepreApi, Finder, JsonDetails, TableDetails};
 use anyhow::Result;
 use async_trait::async_trait;
 use kube::{
@@ -6,19 +7,18 @@ use kube::{
     discovery::pinned_kind,
     Client,
 };
-use kube_depre::utils::{ClusterOP, DepreApi, Finder, JsonDetails, TableDetails};
 use log::info;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::task::spawn;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
-pub(crate) struct Cluster {
+pub struct Cluster {
     deprecated_api_result: Vec<DepreApi>,
 }
 
 impl<'a> Cluster {
-    pub(crate) async fn new(version: Vec<String>) -> anyhow::Result<Cluster> {
+    pub async fn new(version: Vec<String>) -> anyhow::Result<Cluster> {
         Ok(Cluster {
             deprecated_api_result: Self::get_deprecated_api(version).await?,
         })

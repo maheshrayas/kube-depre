@@ -1,6 +1,6 @@
+use crate::utils::{DepreApi, Finder, TableDetails};
 use async_trait::async_trait;
 use jwalk::{Parallelism, WalkDir};
-use kube_depre::utils::{DepreApi, Finder, TableDetails};
 use rayon::iter::ParallelBridge;
 use rayon::prelude::ParallelIterator;
 use serde::{Deserialize, Serialize};
@@ -13,13 +13,13 @@ use yaml_rust::{Yaml, YamlLoader};
 type SenderChannel = Sender<(String, String, String, String, String, String)>;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
-pub(crate) struct FileSystem {
+pub struct FileSystem {
     file_dir: String,
     deprecated_apis: Vec<DepreApi>,
 }
 
 impl<'a> FileSystem {
-    pub(crate) async fn new(file_dir: String, version: Vec<String>) -> anyhow::Result<FileSystem> {
+    pub async fn new(file_dir: String, version: Vec<String>) -> anyhow::Result<FileSystem> {
         Ok(FileSystem {
             file_dir,
             deprecated_apis: Self::get_deprecated_api(version).await?,
