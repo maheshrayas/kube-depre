@@ -9,16 +9,21 @@ const K8_VERSIONS: [&str; 4] = ["1.16", "1.22", "1.25", "1.26"];
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 struct Sunset {
+    /// list of deprecated apis in a specific kubernetes version, -t 1.22
+    /// if -t not supplied, it will query for versions : 1.16, 1.22, 1.25, 1.26
     #[clap(long = "target-version", short = 't')]
     target_version: Option<String>,
-    /// Output format table, junit, csv
+    /// -o csv. Default is table
+    /// Output format table, csv
     #[clap(long = "output", short = 'o', arg_enum,default_value_t = Output::Table)]
     output: Output,
     #[clap(long, short)]
     kubeconfig: Option<String>,
-    /// Scrape the cluster for deprecated apis,
+    /// supply -f or --file "Manifest file directory".
+    /// if -f not supplied, it will by default query the cluster
     #[clap(long, short)]
     file: Option<String>,
+    /// supply --debug to print the debug information
     #[clap(short, long, parse(from_occurrences))]
     debug: usize,
 }
