@@ -10,7 +10,7 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      # Delete the previous comments
+      # Delete the previous comments created by github-action[bot]
       - name: pr-deleter
         uses: maheshrayas/action-pr-comment-delete@v1
         with:
@@ -20,6 +20,7 @@ jobs:
           user: 'github-actions[bot]'
           issue: '${{github.event.number}}'
       - uses: actions/checkout@v2
+      # Install kube-depre and run it against the manifest file dir
       - name: Check kubedepre
         id: kubedepre
         run: |
