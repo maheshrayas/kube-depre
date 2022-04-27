@@ -23,7 +23,7 @@ jobs:
       - name: Check kubedepre
         id: kubedepre
         run: |
-          wget -O kube-depre.tar.gz  --progress=dot:mega https://github.com/maheshrayas/kube-depre/releases/download/v0.1.8/kube-depre-x86_64-unknown-linux-musl.tar.gz && tar -xvzf kube-depre.tar.gz && chmod +x kube-depre
+          ./release/install.sh
           ./kube-depre -f $(pwd)/tests/data -o csv
       - name: Read CSV
         if : hashFiles('deprecated-list.csv') != ''
