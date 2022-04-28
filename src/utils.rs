@@ -122,7 +122,6 @@ pub fn init_logger() {
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum)]
 pub enum Output {
     Table,
-    Junit,
     Csv,
 }
 

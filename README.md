@@ -32,7 +32,7 @@ OR
 ### CLI Supported Args
 
 ```bash
-kube-depre 0.1.8
+kube-depre 0.1.10
 
 USAGE:
     kube-depre [OPTIONS]
@@ -49,15 +49,15 @@ OPTIONS:
             Print help information
 
     -k, --kubeconfig <KUBECONFIG>
-
+            location of Kubeconfig, Default: ~/.kube/config
 
     -o, --output <OUTPUT>
-            -o csv. Default is table Output format table, csv [default: table] [possible values:
-            table, junit, csv]
+            Output format for the list of deprecated APIs [default: table] [possible values: table,
+            csv]
 
     -t, --target-version <TARGET_VERSION>
-            list of deprecated apis in a specific kubernetes version, -t 1.22 if -t not supplied, it
-            will query for versions : 1.16, 1.22, 1.25, 1.26
+            list of deprecated APIs in a specific kubernetes version, -t 1.22. If -t not supplied,
+            it will query for versions : 1.16, 1.22, 1.25, 1.26
 
     -V, --version
             Print version information
@@ -97,6 +97,8 @@ or
 
 #### Check for deprecated APIs as a part of Pull request in Github
 
-Refer github [workflow](./github/workflows/check_deprecated.yaml) on how to scan kubernetes manifests in github repo and comment on PR with list of Deprecated APIs.
+Refer github [workflow](./.github/workflows/check_deprecated.yaml) on how to scan kubernetes manifests in github repo and comment on PR with list of Deprecated APIs.
 
 ![](./docs/img/github_action.png)
+
+

@@ -9,14 +9,14 @@ const K8_VERSIONS: [&str; 4] = ["1.16", "1.22", "1.25", "1.26"];
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 struct Sunset {
-    /// list of deprecated apis in a specific kubernetes version, -t 1.22
-    /// if -t not supplied, it will query for versions : 1.16, 1.22, 1.25, 1.26
+    /// list of deprecated APIs in a specific kubernetes version, -t 1.22.
+    /// If -t not supplied, it will query for versions : 1.16, 1.22, 1.25, 1.26
     #[clap(long = "target-version", short = 't')]
     target_version: Option<String>,
-    /// -o csv. Default is table
-    /// Output format table, csv
+    /// Output format for the list of deprecated APIs.
     #[clap(long = "output", short = 'o', arg_enum,default_value_t = Output::Table)]
     output: Output,
+    /// location of Kubeconfig, Default: ~/.kube/config
     #[clap(long, short)]
     kubeconfig: Option<String>,
     /// supply -f or --file "Manifest file directory".
@@ -68,9 +68,6 @@ async fn main() -> anyhow::Result<()> {
                     Output::Csv => {
                         x.generate_csv(col_replace)?;
                     }
-                    Output::Junit => {
-                        println!("Junit");
-                    }
                     Output::Table => {
                         x.generate_table(col_replace)?;
                     }
@@ -84,9 +81,6 @@ async fn main() -> anyhow::Result<()> {
                 match cli.output {
                     Output::Csv => {
                         x.generate_csv(col_replace)?;
-                    }
-                    Output::Junit => {
-                        println!("Junit");
                     }
                     Output::Table => {
                         x.generate_table(col_replace)?;
