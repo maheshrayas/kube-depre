@@ -21,7 +21,7 @@ async fn test_find_deprecated_api_in_files() {
     )
     .await;
     let m = new_file.unwrap().find_deprecated_api().await.unwrap();
-    assert_eq!(m.len(), 1);
+    assert_eq!(m.len(), 2);
 }
 
 #[tokio::test]
