@@ -5,7 +5,7 @@ RUN apt update && apt install -y musl-tools musl-dev
 RUN update-ca-certificates
 
 # Create appuser
-ENV USER=pr
+ENV USER=kdepre
 ENV UID=10001
 
 RUN adduser \
