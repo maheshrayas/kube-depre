@@ -15,3 +15,17 @@ async fn test_find_deprecated_api_in_cluster() {
     let m = c.unwrap().find_deprecated_api().await.unwrap();
     assert_eq!(m.len(), 2);
 }
+
+#[tokio::test]
+async fn test_invalid_version() {
+    struct Te;
+    #[async_trait]
+    impl Finder for Te {
+        async fn find_deprecated_api(&self) -> anyhow::Result<Vec<TableDetails>> {
+            Ok(vec![])
+        }
+    }
+    let versions: Vec<&str> = vec!["1.20"];
+    let c = Cluster::new(versions).await;
+    assert!(c.is_err());
+}
