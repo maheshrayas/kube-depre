@@ -71,6 +71,8 @@ OPTIONS:
 # check for list for depreacted Apis in the cluster in K8s 1.22 and output will be printed on terminal
 ./kube-depre -t 1.22
 
+# check for list for depreacted Apis in the cluster in K8s 1.22 & 1.24 and output will be printed on terminal
+./kube-depre -t 1.22,1.24
 or 
 # check for list for depreacted Apis in the cluster in K8s 1.22 and output will be in csv format
 ./kube-depre -t 1.22 -o csv
