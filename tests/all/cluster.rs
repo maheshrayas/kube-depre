@@ -10,7 +10,7 @@ async fn test_find_deprecated_api_in_cluster() {
             Ok(vec![])
         }
     }
-    let versions: Vec<String> = vec!["1.25".to_string()];
+    let versions: Vec<&str> = vec!["1.25"];
     let c = Cluster::new(versions).await;
     let m = c.unwrap().find_deprecated_api().await.unwrap();
     assert_eq!(m.len(), 2);

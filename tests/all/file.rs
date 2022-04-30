@@ -11,7 +11,7 @@ async fn test_find_deprecated_api_in_files() {
             Ok(vec![])
         }
     }
-    let versions: Vec<String> = vec!["1.25".to_string()];
+    let versions: Vec<&str> = vec!["1.25"];
     let mut absolute_path = std::env::current_dir().unwrap();
     let relative_path = PathBuf::from("tests/data");
     absolute_path.push(relative_path);
@@ -33,7 +33,7 @@ async fn test_find_deprecated_api_in_files_multiple_version() {
             Ok(vec![])
         }
     }
-    let versions: Vec<String> = vec!["1.25".to_string(), "1.22".to_string()];
+    let versions: Vec<&str> = vec!["1.25", "1.22"];
     let mut absolute_path = std::env::current_dir().unwrap();
     let relative_path = PathBuf::from("tests/data");
     absolute_path.push(relative_path);
@@ -55,7 +55,7 @@ async fn test_find_deprecated_api_in_files_with_no_matching_version() {
             Ok(vec![])
         }
     }
-    let versions: Vec<String> = vec!["1.26".to_string()];
+    let versions: Vec<&str> = vec!["1.26"];
     let mut absolute_path = std::env::current_dir().unwrap();
     let relative_path = PathBuf::from("tests/data");
     absolute_path.push(relative_path);

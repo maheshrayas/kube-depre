@@ -1,17 +1,16 @@
 use anyhow::Result;
+use async_trait::async_trait;
 use clap::ArgEnum;
 use comfy_table::{ContentArrangement, Table};
 use csv::Writer;
 use env_logger::{Builder, Env};
 use log::{debug, info};
-
-use async_trait::async_trait;
-
 use serde::{Deserialize, Serialize};
 use std::{fs::File, io::Write};
 use tokio::task::JoinHandle;
 
 pub type ClusterOP = Vec<JoinHandle<Result<Vec<TableDetails>>>>;
+pub const K8_VERSIONS: [&str; 4] = ["1.16", "1.22", "1.25", "1.26"];
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct JsonDetails {
@@ -143,24 +142,47 @@ pub struct DepreApi {
 #[async_trait]
 pub trait Finder {
     async fn find_deprecated_api(&self) -> Result<Vec<TableDetails>>;
-    async fn get_deprecated_api(versions: Vec<String>) -> anyhow::Result<Vec<DepreApi>> {
+    async fn get_deprecated_api(versions: Vec<&str>) -> anyhow::Result<Vec<DepreApi>> {
         let mut output: Vec<DepreApi> = vec![];
         for version in versions {
-            info!(
-                "Getting list of deperecated apis in kubernetes version {}",
-                version
-            );
-            let url = format!(
+            // check if version is present in deprecated k8s version list
+            if K8_VERSIONS.contains(&version) {
+                info!(
+                    "Getting list of deperecated apis in kubernetes version {}",
+                    version
+                );
+                let url = format!(
             "https://raw.githubusercontent.com/maheshrayas/k8s_deprecated_api/main/v{}/data.json",
             version
         );
-            debug!("deprecated list url {}", url);
-            let v: Vec<DepreApi> = reqwest::get(url).await?.json().await?;
-            for mut k in v {
-                k.k8_version = Some(version.to_owned());
-                output.push(k)
+
+                debug!("deprecated list url {}", url);
+                let v: Vec<DepreApi> = reqwest::get(url).await?.json().await?;
+                for mut k in v {
+                    k.k8_version = Some(version.to_owned());
+                    output.push(k)
+                }
+            } else {
+                info!("No APIs deprecated in version {}", version);
             }
         }
         Ok(output)
+    }
+
+    async fn process(&self, output_type: Output, col_replace: &str) -> anyhow::Result<()> {
+        let x = VecTableDetails(self.find_deprecated_api().await?);
+        if !x.0.is_empty() {
+            match output_type {
+                Output::Csv => {
+                    x.generate_csv(col_replace)?;
+                }
+                Output::Table => {
+                    x.generate_table(col_replace)?;
+                }
+            }
+        } else {
+            info!("{} No deprecated versions found", String::from("\u{1F389}"),)
+        }
+        Ok(())
     }
 }
