@@ -41,9 +41,10 @@ async fn main() -> anyhow::Result<()> {
     init_logger();
     let cli = Sunset::parse();
     let versions: Vec<&str> = if let Some(version) = &cli.target_version {
-        version.as_str().split(",").collect::<Vec<&str>>()
+        version.as_str().split(',').collect::<Vec<&str>>()
     } else {
-        K8_VERSIONS.iter().map(|v| *v).collect()
+        let y = K8_VERSIONS.iter();
+        y.cloned().collect::<Vec<&str>>()
     };
 
     match cli.debug {
