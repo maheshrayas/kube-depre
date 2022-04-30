@@ -1,11 +1,9 @@
 use clap::Parser;
 use kube_depre::Cluster;
 use kube_depre::FileSystem;
-use kube_depre::{init_logger, Finder, Output, Scrape, VecTableDetails};
-use log::error;
-use std::process::exit;
+use kube_depre::K8_VERSIONS;
+use kube_depre::{init_logger, Finder, Output, Scrape};
 
-const K8_VERSIONS: [&str; 4] = ["1.16", "1.22", "1.25", "1.26"];
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 struct Sunset {
@@ -42,15 +40,10 @@ impl Sunset {
 async fn main() -> anyhow::Result<()> {
     init_logger();
     let cli = Sunset::parse();
-    let versions: Vec<String> = if let Some(version) = &cli.target_version {
-        if K8_VERSIONS.contains(&version.as_str()) {
-            [version.to_string()].to_vec()
-        } else {
-            error!("Version {} does not have any deprecated apis", version);
-            exit(0);
-        }
+    let versions: Vec<&str> = if let Some(version) = &cli.target_version {
+        version.as_str().split(",").collect::<Vec<&str>>()
     } else {
-        K8_VERSIONS.iter().map(|v| v.to_string()).collect()
+        K8_VERSIONS.iter().map(|v| *v).collect()
     };
 
     match cli.debug {
@@ -62,33 +55,12 @@ async fn main() -> anyhow::Result<()> {
     match cli.check_scrape_type() {
         Scrape::Cluster(col_replace) => {
             let c = Cluster::new(versions).await?;
-            let x = VecTableDetails(c.find_deprecated_api().await?);
-            if !x.0.is_empty() {
-                match cli.output {
-                    Output::Csv => {
-                        x.generate_csv(col_replace)?;
-                    }
-                    Output::Table => {
-                        x.generate_table(col_replace)?;
-                    }
-                }
-            }
+            c.process(cli.output, col_replace).await?;
         }
         Scrape::Dir(loc, col_replace) => {
-            let c = FileSystem::new(loc, versions).await?;
-            let x = VecTableDetails(c.find_deprecated_api().await?);
-            if !x.0.is_empty() {
-                match cli.output {
-                    Output::Csv => {
-                        x.generate_csv(col_replace)?;
-                    }
-                    Output::Table => {
-                        x.generate_table(col_replace)?;
-                    }
-                }
-            }
+            let f = FileSystem::new(loc.to_owned(), versions).await?;
+            f.process(cli.output, col_replace).await?;
         }
     };
-
     Ok(())
 }

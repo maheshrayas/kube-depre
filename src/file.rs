@@ -19,7 +19,7 @@ pub struct FileSystem {
 }
 
 impl<'a> FileSystem {
-    pub async fn new(file_dir: String, version: Vec<String>) -> anyhow::Result<FileSystem> {
+    pub async fn new(file_dir: String, version: Vec<&str>) -> anyhow::Result<FileSystem> {
         Ok(FileSystem {
             file_dir,
             deprecated_apis: Self::get_deprecated_api(version).await?,

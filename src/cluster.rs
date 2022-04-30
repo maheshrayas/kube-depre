@@ -1,5 +1,5 @@
 use crate::utils::{ClusterOP, DepreApi, Finder, JsonDetails, TableDetails};
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use kube::{
     api::{Api, DynamicObject, ResourceExt},
@@ -18,10 +18,17 @@ pub struct Cluster {
 }
 
 impl<'a> Cluster {
-    pub async fn new(version: Vec<String>) -> anyhow::Result<Cluster> {
-        Ok(Cluster {
-            deprecated_api_result: Self::get_deprecated_api(version).await?,
-        })
+    pub async fn new(version: Vec<&str>) -> anyhow::Result<Cluster> {
+        let deprecated_api_result = Self::get_deprecated_api(version).await?;
+        if deprecated_api_result.len() > 0 {
+            Ok(Cluster {
+                deprecated_api_result,
+            })
+        } else {
+            Err(anyhow!(
+                "Input target version does not have any kubernetes deprecated APIs"
+            ))
+        }
     }
 }
 
@@ -31,7 +38,8 @@ impl Finder for Cluster {
         let client = Client::try_default().await?;
         let current_config = kube::config::Kubeconfig::read().unwrap();
         info!(
-            "Connected to cluster {:?}",
+            "{} Connected to cluster {:?}",
+            String::from("\u{2638}"),
             current_config.current_context.unwrap()
         );
         let m = self.deprecated_api_result.to_owned();
