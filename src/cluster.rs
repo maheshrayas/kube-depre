@@ -37,12 +37,12 @@ impl Finder for Cluster {
     async fn find_deprecated_api(&self) -> Result<Vec<TableDetails>> {
         let client = Client::try_default().await?;
         let current_config = kube::config::Kubeconfig::read().unwrap();
+        let m = self.deprecated_api_result.to_owned();
         info!(
             "{} Connected to cluster {:?}",
             String::from("\u{2638}"),
             current_config.current_context.unwrap()
         );
-        let m = self.deprecated_api_result.to_owned();
         let join_handle: ClusterOP = m
             .into_iter()
             .map(|resource| {
@@ -62,6 +62,7 @@ impl Finder for Cluster {
                     } else {
                         return Ok(temp_table);
                     };
+
                     let api: Api<DynamicObject> = Api::all_with((*client_clone).clone(), &ar);
                     let list = if let Ok(list) = api.list(&Default::default()).await {
                         list
