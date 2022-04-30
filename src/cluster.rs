@@ -20,7 +20,7 @@ pub struct Cluster {
 impl<'a> Cluster {
     pub async fn new(version: Vec<&str>) -> anyhow::Result<Cluster> {
         let deprecated_api_result = Self::get_deprecated_api(version).await?;
-        if deprecated_api_result.len() > 0 {
+        if !deprecated_api_result.is_empty() {
             Ok(Cluster {
                 deprecated_api_result,
             })
