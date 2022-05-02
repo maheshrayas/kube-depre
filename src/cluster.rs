@@ -56,11 +56,13 @@ impl Finder for Cluster {
                     let removed = resource.removed.to_string();
                     let k8_version = resource.k8_version.to_owned().unwrap().to_string();
                     let gvk = GroupVersionKind::gvk(&group, &version, &kind);
-                    let ar = if let Ok((ar, _)) = pinned_kind(&(*client_clone).clone(), &gvk).await
-                    {
-                        ar
-                    } else {
-                        return Ok(temp_table);
+                    let ar = match pinned_kind(&(*client_clone).clone(), &gvk).await {
+                        Ok((ar, _)) => ar,
+                        Err(e) => match e {
+                            // this error may occur when you donot have the object in cluster, so don't panic, rather return empty string
+                            kube::Error::Api(_) => return Ok(temp_table),
+                            _ => return Err(anyhow!(e)),
+                        },
                     };
                     let api: Api<DynamicObject> = Api::all_with((*client_clone).clone(), &ar);
                     let list = if let Ok(list) = api.list(&Default::default()).await {
@@ -112,7 +114,7 @@ impl Finder for Cluster {
             .collect();
         let mut v: Vec<TableDetails> = vec![];
         for task in join_handle {
-            v.append(&mut task.await?.unwrap());
+            v.append(&mut task.await??);
         }
         Ok(v)
     }

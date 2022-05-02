@@ -64,12 +64,12 @@ impl<'a> FileSystem {
 impl<'a> Finder for FileSystem {
     async fn find_deprecated_api(&self) -> anyhow::Result<Vec<TableDetails>> {
         let (sender, receiver) = channel();
-        let _: anyhow::Result<()> = WalkDir::new(&self.file_dir)
+        let file_return: anyhow::Result<()> = WalkDir::new(&self.file_dir)
             .parallelism(Parallelism::RayonNewPool(0))
             .into_iter()
             .par_bridge()
             .try_for_each_with(sender, |sed: &mut SenderChannel, op| {
-                let dir_entry = op.ok().unwrap();
+                let dir_entry = op?;
                 if dir_entry.file_type().is_file() {
                     let path = dir_entry.path();
                     if let Some(yaml_file) = path.extension() {
@@ -87,6 +87,9 @@ impl<'a> Finder for FileSystem {
                 }
                 Ok(())
             });
+        if let Err(e) = file_return {
+            return Err(e);
+        }
         let res: Vec<_> = receiver.iter().collect();
         let mut temp_table: Vec<TableDetails> = vec![];
         for (kind, supported_api_version, deprecated_api_version, name, path, k8_version) in res {
@@ -99,6 +102,7 @@ impl<'a> Finder for FileSystem {
                 k8_version,
             });
         }
+
         Ok(temp_table)
     }
 }

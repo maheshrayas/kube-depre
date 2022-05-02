@@ -170,7 +170,8 @@ pub trait Finder {
     }
 
     async fn process(&self, output_type: Output, col_replace: &str) -> anyhow::Result<()> {
-        let x = VecTableDetails(self.find_deprecated_api().await?);
+        let m = self.find_deprecated_api().await?;
+        let x = VecTableDetails(m);
         if !x.0.is_empty() {
             match output_type {
                 Output::Csv => {
