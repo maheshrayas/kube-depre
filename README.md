@@ -77,6 +77,9 @@ OPTIONS:
 # check for list for depreacted Apis in the cluster in K8s 1.22 and output will be in csv format
 ./kube-depre -t 1.22 -o csv
 
+# check for list for depreacted Apis in the cluster for non default K8s Custom resouces, for example: Istio, SecretStoreCSI etc.
+./kube-depre -t custom
+
 # check for list for depreacted Apis in the cluster in K8s version 1.16,1.22,1.24,1.25  and output will be in csv format
 ./kube-depre -o csv
 
@@ -93,6 +96,9 @@ OPTIONS:
 
 # check for list for depreacted Apis in the supplied file directory in K8s 1.22 and output will be in csv format
 ./kube-depre -t 1.22 -o csv -f $(pwd)/tests/data
+
+# check for list for depreacted Apis in the files for non default K8s Custom resouces, for example: Istio, SecretStoreCSI etc.
+./kube-depre -t custom -o csv -f $(pwd)/tests/data
 
 # check for list for depreacted Apis in the supplied file directory in K8s version 1.16,1.22,1.24,1.25  and output will be in csv format
 ./kube-depre -o csv -f $(pwd)/tests/data
