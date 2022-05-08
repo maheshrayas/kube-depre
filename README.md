@@ -57,7 +57,7 @@ OPTIONS:
 
     -t, --target-version <TARGET_VERSION>
             list of deprecated APIs in a specific kubernetes version, -t 1.22. If -t not supplied,
-            it will query for versions : 1.16, 1.22, 1.25, 1.26
+            it will query for versions : 1.16, 1.22, 1.25, 1.26, 1.27, custom
 
     -V, --version
             Print version information
