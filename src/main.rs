@@ -8,15 +8,12 @@ use kube_depre::{init_logger, Finder, Output, Scrape};
 #[clap(author, version, about, long_about = None)]
 struct Sunset {
     /// list of deprecated APIs in a specific kubernetes version, -t 1.22.
-    /// If -t not supplied, it will query for versions : 1.16, 1.22, 1.25, 1.26
+    /// If -t not supplied, it will query for versions : 1.16, 1.22, 1.25, 1.26, 1.27, custom
     #[clap(long = "target-version", short = 't')]
     target_version: Option<String>,
     /// Output format for the list of deprecated APIs.
     #[clap(long = "output", short = 'o', arg_enum,default_value_t = Output::Table)]
     output: Output,
-    /// location of Kubeconfig, Default: ~/.kube/config
-    #[clap(long, short)]
-    kubeconfig: Option<String>,
     /// supply -f or --file "Manifest file directory".
     /// if -f not supplied, it will by default query the cluster
     #[clap(long, short)]
