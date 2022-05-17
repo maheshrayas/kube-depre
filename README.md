@@ -44,7 +44,7 @@ export KUBECONFIG={config-location}
 ### CLI Supported Args
 
 ```bash
-kube-depre 0.1.10
+kube-depre 0.1.14
 
 USAGE:
     kube-depre [OPTIONS]
@@ -59,9 +59,6 @@ OPTIONS:
 
     -h, --help
             Print help information
-
-    -k, --kubeconfig <KUBECONFIG>
-            location of Kubeconfig, Default: ~/.kube/config
 
     -o, --output <OUTPUT>
             Output format for the list of deprecated APIs [default: table] [possible values: table,
@@ -109,8 +106,9 @@ OPTIONS:
 # check for list for depreacted Apis in the supplied file directory in K8s 1.22 and output will be in csv format
 ./kube-depre -t 1.22 -o csv -f $(pwd)/tests/data
 
-# check for list for depreacted Apis in the files for non default K8s Custom resouces, for example: Istio, SecretStoreCSI etc.
+# check for list for depreacted Apis in the files for non default K8s Kinds or Custom resouces, for example: Istio, SecretStoreCSI etc.
 ./kube-depre -t custom -o csv -f $(pwd)/tests/data
+**If you want to add additional kinds, please create a PR [here](https://github.com/maheshrayas/k8s_deprecated_api/blob/main/vcustom/data.json)** 
 
 # check for list for depreacted Apis in the supplied file directory in K8s version 1.16,1.22,1.24,1.25  and output will be in csv format
 ./kube-depre -o csv -f $(pwd)/tests/data
