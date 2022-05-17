@@ -24,10 +24,22 @@ Supports only Linux and Mac
 
 OR
 
-2. curl -L https://raw.githubusercontent.com/maheshrayas/kube-depre/main/release/install.sh | sh - 
+2.
 
+```bash
+curl -L https://raw.githubusercontent.com/maheshrayas/kube-depre/main/release/install.sh | sh -
+
+```
 
 ## How to use
+
+### Prerequisite if validating against the K8s cluster
+
+kube-depre by default looks for `~/.kube/config` for kuberenetes configuration. If the configuration is stored in other file location, set that location in the `KUBECONFIG` environment variable.
+
+```bash
+export KUBECONFIG={config-location}
+```
 
 ### CLI Supported Args
 
