@@ -100,7 +100,7 @@ pub struct Deprecated {
 
 pub fn init_logger() {
     if std::env::var("RUST_LOG").is_err() {
-        std::env::set_var("RUST_LOG", "info");
+        std::env::set_var("RUST_LOG", "info,kube_client=off");
     }
     let env = Env::default()
         .filter("RUST_LOG")
