@@ -5,7 +5,7 @@
 </h1>
 
 <div align="center">
-  <a href="hhttps://github.com/anzx/platform-secret-management/actions/workflows/ci.yaml" alt="Build"><img src="https://github.com/maheshrayas/kube-depre/actions/workflows/ci.yaml/badge.svg" /></a>
+  <a href=""https://github.com/maheshrayas/kube-depre/actions/workflows/ci.yaml" alt="Build"><img src="https://github.com/maheshrayas/kube-depre/actions/workflows/ci.yaml/badge.svg" /></a>
   <a href="https://codecov.io/gh/maheshrayas/kube-depre" alt="Lint"><img src="https://codecov.io/gh/maheshrayas/kube-depre/branch/main/graph/badge.svg?token=VF6UCCDNXI" /></a>
 </div>
 
