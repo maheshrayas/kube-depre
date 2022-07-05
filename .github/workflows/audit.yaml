@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - uses: actions-rs/audit-check@v1
+      - uses: actions-rs/toolchain@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          toolchain: stable
+      - run: |
+          cargo install cargo-audit
+          cargo audit --ignore RUSTSEC-2022-0033 --ignore RUSTSEC-2022-0032 # openssl bug unaffected
