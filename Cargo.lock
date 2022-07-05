@@ -862,6 +862,7 @@ dependencies = [
  "kube",
  "log",
  "openssl",
+ "openssl-src 300.0.8+3.0.4",
  "pretty_assertions",
  "rayon",
  "reqwest",
@@ -1083,6 +1084,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "openssl-src"
+version = "300.0.8+3.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "00d3a6562a1fd6e812d1a05e22b3b7b9861ec261c05cfbb20a7d29af88952b4f"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "openssl-sys"
 version = "0.9.72"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1091,7 +1101,7 @@ dependencies = [
  "autocfg",
  "cc",
  "libc",
- "openssl-src",
+ "openssl-src 111.18.0+1.1.1n",
  "pkg-config",
  "vcpkg",
 ]
