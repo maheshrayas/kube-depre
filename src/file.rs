@@ -18,7 +18,7 @@ pub struct FileSystem {
     deprecated_apis: Vec<DepreApi>,
 }
 
-impl<'a> FileSystem {
+impl FileSystem {
     pub async fn new(file_dir: String, version: Vec<&str>) -> anyhow::Result<FileSystem> {
         Ok(FileSystem {
             file_dir,
@@ -61,7 +61,7 @@ impl<'a> FileSystem {
 }
 
 #[async_trait]
-impl<'a> Finder for FileSystem {
+impl Finder for FileSystem {
     async fn find_deprecated_api(&self) -> anyhow::Result<Vec<TableDetails>> {
         let (sender, receiver) = channel();
         let file_return: anyhow::Result<()> = WalkDir::new(&self.file_dir)
