@@ -33,6 +33,7 @@ impl Sunset {
     }
 }
 
+#[cfg(not(tarpaulin_include))]
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     init_logger();
