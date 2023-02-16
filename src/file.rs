@@ -87,9 +87,7 @@ impl Finder for FileSystem {
                 }
                 Ok(())
             });
-        if let Err(e) = file_return {
-            return Err(e);
-        }
+        let _ = file_return?;
         let res: Vec<_> = receiver.iter().collect();
         let mut temp_table: Vec<TableDetails> = vec![];
         for (kind, supported_api_version, deprecated_api_version, name, path, k8_version) in res {

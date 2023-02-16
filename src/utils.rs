@@ -10,7 +10,7 @@ use std::{fs::File, io::Write};
 use tokio::task::JoinHandle;
 
 pub type ClusterOP = Vec<JoinHandle<Result<Vec<TableDetails>>>>;
-pub const K8_VERSIONS: [&str; 6] = ["1.16", "1.22", "1.25", "1.26", "1.27", "custom"];
+pub const K8_VERSIONS: [&str; 7] = ["1.16", "1.22", "1.25", "1.26", "1.27", "1.29", "custom"];
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct JsonDetails {
