@@ -65,6 +65,21 @@ async fn test_csv_generation() {
 }
 
 #[tokio::test]
+async fn test_markdown_table_generation() {
+    let t = TableDetails {
+        kind: "ValidatingWebhookConfiguration".to_string(),
+        namespace: "".to_string(),
+        name: "istiod-istio-system".to_string(),
+        deprecated_api_version: "admissionregistration.k8s.io/v1beta1".to_string(),
+        supported_api_version: "admissionregistration.k8s.io/v1".to_string(),
+        k8_version: "1.22".to_string(),
+    };
+    let table = VecTableDetails(vec![t]);
+    let x = table.generate_markdown_table("Namespace");
+    assert!(x.is_ok());
+}
+
+#[tokio::test]
 async fn test_process_generate_table() {
     struct Te;
     #[async_trait]
