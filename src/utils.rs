@@ -1,7 +1,7 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use clap::ArgEnum;
-use comfy_table::{ContentArrangement, Table};
+use comfy_table::{presets::ASCII_MARKDOWN, ContentArrangement, Table};
 use csv::Writer;
 use env_logger::{Builder, Env};
 use log::{debug, info};
@@ -67,6 +67,23 @@ impl VecTableDetails {
         );
         Ok(())
     }
+    pub fn generate_markdown_table(self, column_replace: &str) -> Result<()> {
+        let mut t = Table::new();
+        let t = generate_table_header(&mut t, column_replace);
+        t.load_preset(ASCII_MARKDOWN);
+        for r in self.0 {
+            t.add_row(vec![
+                r.kind,
+                r.namespace,
+                r.name,
+                r.deprecated_api_version,
+                r.supported_api_version,
+                r.k8_version,
+            ]);
+        }
+        println!("{t}");
+        Ok(())
+    }
 }
 
 pub fn generate_table_header<'a>(t: &'a mut Table, column_replace: &str) -> &'a mut Table {
@@ -122,6 +139,7 @@ pub fn init_logger() {
 pub enum Output {
     Table,
     Csv,
+    MarkdownTable,
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -179,6 +197,9 @@ pub trait Finder {
                 }
                 Output::Table => {
                     x.generate_table(col_replace)?;
+                }
+                Output::MarkdownTable => {
+                    x.generate_markdown_table(col_replace)?;
                 }
             }
         } else {

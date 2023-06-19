@@ -62,7 +62,7 @@ OPTIONS:
 
     -o, --output <OUTPUT>
             Output format for the list of deprecated APIs [default: table] [possible values: table,
-            csv]
+            csv, markdown-table]
 
     -t, --target-version <TARGET_VERSION>
             list of deprecated APIs in a specific kubernetes version, -t 1.22. If -t not supplied,
