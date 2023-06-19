@@ -44,7 +44,7 @@ export KUBECONFIG={config-location}
 ### CLI Supported Args
 
 ```bash
-kube-depre 0.1.16
+kube-depre 0.3.0
 
 USAGE:
     kube-depre [OPTIONS]
@@ -66,7 +66,7 @@ OPTIONS:
 
     -t, --target-version <TARGET_VERSION>
             list of deprecated APIs in a specific kubernetes version, -t 1.22. If -t not supplied,
-            it will query for versions : 1.16, 1.22, 1.25, 1.26, 1.27, custom
+            it will query for versions : 1.16, 1.22, 1.25, 1.26, 1.27, 1.29, custom
 
     -V, --version
             Print version information
