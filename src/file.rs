@@ -43,6 +43,23 @@ impl FileSystem {
                         api_version = "REMOVED";
                         send = true
                     }
+
+                    // this check if for when 2 different versions are supported in kubernetes
+                    // for example, autoscaling/v2 and autoscaling/v1 are both supported
+                    // TODO: Remove this check once the data.json has deprecated_versions for all apiGroup
+                    if z.deprecated_versions.is_some() {
+                        if z.deprecated_versions
+                            .as_ref()
+                            .unwrap()
+                            .contains(&api_version.to_string())
+                        {
+                            send = true
+                        } else {
+                            send = false;
+                            // hack so that it wont send this particular api to channel
+                            supported_api_version = api_version.to_string()
+                        }
+                    }
                     if supported_api_version.ne(api_version) || send.eq(&true) {
                         sed.send((
                             doc["kind"].as_str().unwrap().to_string(),

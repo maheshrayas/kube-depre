@@ -1,0 +1,22 @@
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: store-autoscale
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: store-autoscale
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Object
+    object:
+      describedObject:
+        kind: Service
+        name: store-autoscale
+      metric:
+        name: "autoscaling.googleapis.com|gclb-capacity-utilization"
+      target:
+        averageValue: 70
+        type: AverageValue

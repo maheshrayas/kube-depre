@@ -1,6 +1,6 @@
 [package]
 name = "kube-depre"
-version = "0.1.16"
+version = "0.3.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -14,18 +14,18 @@ path = "src/lib.rs"
 serde = {version = "1.0", features  = ["derive"] }
 serde_json = "1.0"
 yaml-rust = "0.4.5"
-kube = {version="0.73.1" , features = ["runtime"]}
-k8s-openapi = {version = "0.15.0",default-features = false, features=["v1_24"]}
+kube = {version="0.83.0" , features = ["runtime"]}
+k8s-openapi = {version = "0.18.0",default-features = false, features=["v1_26"]}
 tokio = { version = "1.17.0", features = ["full"] }
 anyhow="1.0"
-env_logger = "0.9.0"
+env_logger = "0.10.0"
 log = "0.4.0"
 reqwest = { version = "0.11", features = ["json"] }
-clap = { version = "3.1.8", features = ["derive"] }
-comfy-table = "6.0.0"
+clap = { version = "4.3", features = ["derive"] }
+comfy-table = "7.0"
 openssl = { version = "0.10", features = ["vendored"] }
 csv="1.1.6"
-jwalk = "0.6.0"
+jwalk = "0.8.1"
 rayon ="1.5.1"
 async-trait = "0.1.53"
 openssl-src = "300.0.12+3.0.4"

@@ -1,6 +1,6 @@
 use anyhow::Result;
 use async_trait::async_trait;
-use clap::ArgEnum;
+use clap::ValueEnum;
 use comfy_table::{presets::ASCII_MARKDOWN, ContentArrangement, Table};
 use csv::Writer;
 use env_logger::{Builder, Env};
@@ -135,7 +135,7 @@ pub fn init_logger() {
         .init();
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum Output {
     Table,
     Csv,
@@ -154,6 +154,7 @@ pub struct DepreApi {
     pub group: String,
     pub version: String,
     pub removed: String,
+    pub deprecated_versions: Option<Vec<String>>,
     pub k8_version: Option<String>,
 }
 
