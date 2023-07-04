@@ -99,7 +99,6 @@ impl Finder for Cluster {
                                 if deprecated_version.is_some() {
                                     // this check if for when 2 different versions are supported in kubernetes
                                     // for example, autoscaling/v2 and autoscaling/v1 are both supported
-                                    println!("I am here {}", ls_app_ver);
                                     if deprecated_version.as_ref().unwrap().contains(&ls_app_ver) {
                                         temp_table.push(TableDetails {
                                             kind: ar.kind.to_string(),
