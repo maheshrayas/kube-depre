@@ -109,17 +109,15 @@ impl Finder for Cluster {
                                             k8_version: k8_version.to_string(),
                                         });
                                     }
-                                } else {
-                                    if !ls_app_ver.eq(&supported_version) {
-                                        temp_table.push(TableDetails {
-                                            kind: ar.kind.to_string(),
-                                            namespace: ns,
-                                            name,
-                                            supported_api_version: supported_version,
-                                            deprecated_api_version: ls_app_ver,
-                                            k8_version: k8_version.to_string(),
-                                        });
-                                    }
+                                } else if !ls_app_ver.eq(&supported_version) {
+                                    temp_table.push(TableDetails {
+                                        kind: ar.kind.to_string(),
+                                        namespace: ns,
+                                        name,
+                                        supported_api_version: supported_version,
+                                        deprecated_api_version: ls_app_ver,
+                                        k8_version: k8_version.to_string(),
+                                    });
                                 }
                             }
                         }
