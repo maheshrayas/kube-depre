@@ -12,15 +12,15 @@ struct Sunset {
     #[clap(long = "target-version", short = 't')]
     target_version: Option<String>,
     /// Output format for the list of deprecated APIs.
-    #[clap(long = "output", short = 'o', arg_enum,default_value_t = Output::Table)]
+    #[clap(long = "output", short = 'o', value_enum,default_value_t = Output::Table)]
     output: Output,
     /// supply -f or --file "Manifest file directory".
     /// if -f not supplied, it will by default query the cluster
     #[clap(long, short)]
     file: Option<String>,
     /// supply --debug to print the debug information
-    #[clap(short, long, parse(from_occurrences))]
-    debug: usize,
+    #[arg(short, long)]
+    debug: bool,
 }
 
 impl Sunset {
@@ -46,7 +46,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     match cli.debug {
-        1 => {
+        true => {
             std::env::set_var("RUST_LOG", "info,kube=debug");
         }
         _ => std::env::set_var("RUST_LOG", "info,kube=info"),

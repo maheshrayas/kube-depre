@@ -55,6 +55,7 @@ impl Finder for Cluster {
                     let version = resource.version.to_string();
                     let removed = resource.removed.to_string();
                     let k8_version = resource.k8_version.to_owned().unwrap().to_string();
+                    let deprecated_version = resource.deprecated_versions.to_owned();
                     let gvk = GroupVersionKind::gvk(&group, &version, &kind);
                     let ar = match pinned_kind(&(*client_clone).clone(), &gvk).await {
                         Ok((ar, _)) => ar,
@@ -72,7 +73,7 @@ impl Finder for Cluster {
                     };
 
                     for item in list.items {
-                        let name = item.name();
+                        let name = item.to_owned().metadata.name.unwrap_or_default();
                         let ns = item.to_owned().metadata.namespace.unwrap_or_default();
                         if removed.eq("true") {
                             temp_table.push(TableDetails {
@@ -95,7 +96,20 @@ impl Finder for Cluster {
                             };
                             if let Some(ls_app_ver) = last_applied_apiversion {
                                 let supported_version = format!("{}/{}", &group, &version);
-                                if !ls_app_ver.eq(&supported_version) {
+                                if deprecated_version.is_some() {
+                                    // this check if for when 2 different versions are supported in kubernetes
+                                    // for example, autoscaling/v2 and autoscaling/v1 are both supported
+                                    if deprecated_version.as_ref().unwrap().contains(&ls_app_ver) {
+                                        temp_table.push(TableDetails {
+                                            kind: ar.kind.to_string(),
+                                            namespace: ns,
+                                            name,
+                                            supported_api_version: supported_version,
+                                            deprecated_api_version: ls_app_ver,
+                                            k8_version: k8_version.to_string(),
+                                        });
+                                    }
+                                } else if !ls_app_ver.eq(&supported_version) {
                                     temp_table.push(TableDetails {
                                         kind: ar.kind.to_string(),
                                         namespace: ns,
