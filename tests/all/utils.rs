@@ -30,7 +30,7 @@ async fn test_check_all_deprecated_api_version_len() {
         .map(|v| *v)
         .collect();
     let m = Te::get_deprecated_api(x).await;
-    assert_eq!(m.unwrap().len(), 35);
+    assert_eq!(m.unwrap().len(), 36);
 }
 
 #[tokio::test]

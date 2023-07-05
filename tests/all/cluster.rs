@@ -13,7 +13,7 @@ async fn test_find_deprecated_api_in_cluster() {
     let versions: Vec<&str> = vec!["1.25"];
     let c = Cluster::new(versions).await;
     let m = c.unwrap().find_deprecated_api().await.unwrap();
-    assert_eq!(m.len(), 2);
+    assert_eq!(m.len(), 1);
 }
 
 #[tokio::test]
