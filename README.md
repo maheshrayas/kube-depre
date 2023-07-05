@@ -44,7 +44,7 @@ export KUBECONFIG={config-location}
 ### CLI Supported Args
 
 ```bash
-kube-depre 0.3.0
+kube-depre 0.4.0
 
 USAGE:
     kube-depre [OPTIONS]
